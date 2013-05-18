@@ -22,9 +22,16 @@ and to verify in your own environment.
 
 ## Installation
 
-If you're using node, just do `npm install reol`. Other may simply copy index.js and put it where you like it. Reol works in all js environments (I think), including commonJS (node) and AMD (requireJS) as well as old-fashioned `<script src="dist/reol.min.js"></script>`-style.
+**Node** `npm install reol --save`
 
-**Compatibility note:** Reol depends on a global JSON object. Use a polyfill if you wish to support older browsers (<IE8).
+**Bower** `bower install reol`
+
+Others may simply copy index.js and put it where you like it. Reol should work 
+in all js environments, including commonJS (node) and AMD (requireJS) as well as 
+old-fashioned `<script src="dist/reol.min.js"></script>`-style.
+
+**Compatibility note:** Reol depends on a global JSON object. Use a polyfill if 
+you wish to support older browsers (<IE8).
 
 
 ## Example

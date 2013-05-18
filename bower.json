@@ -1,0 +1,13 @@
+{
+  "name": "reol",
+  "version": "0.0.0",
+  "main": "index.js",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "test",
+    "Gruntfile.js",
+    "Makefile.js",
+    "package.json"
+  ]
+}
