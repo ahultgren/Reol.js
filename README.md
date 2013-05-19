@@ -11,6 +11,10 @@ Reol lets you create an array of objects pretty much like you've always done, bu
 you can also specify fields to be indexed. The advantage of indexes is that 
 retrieving an object based on the value of an indexed field is a lot faster.
 
+In short, this module is ideal when you have a lot of objects which you want to 
+find based on some keys, where the indexed values do not change and elements do 
+not need to be removed.
+
 
 ### How fast?
 
@@ -54,7 +58,12 @@ list.add({
 // Indexing works even with undefined and complex values, though the latter is not recommended
 list.add({
   test: function(){
-    console.log("seriously try to not do this");
+    console.log("seriously, avoid doing this");
+  },
+  parent: {
+    child: {
+      and: 'this'
+    }
   }
 });
 
@@ -79,7 +88,7 @@ This will be added, see [Todo](#todo).
 
 ## Todo
 
-_Ordered by likeliness and simpleness to implement._
+_Ordered somewhat by simpleness and likelihood of being implemented._
 
 * .get() based on array index (insert-order)
 * non-unique indexing (with option to enable)
@@ -89,6 +98,7 @@ _Ordered by likeliness and simpleness to implement._
 * .remove() stuff
 * option to not auto-serialize objects but use (possibly custom) toString instead
 * A way too hook in external functionality, for example persisting data in localStorage
+* Reindexing objects whose indexed field has changed
 
 
 ## Contribution
