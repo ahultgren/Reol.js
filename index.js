@@ -101,7 +101,7 @@
 
     // Add to indexes
     for(field in this.indexes) {
-      addToIndexe.call(this, field, element);
+      addToIndex.call(this, field, element);
     }
 
     return this;
@@ -153,7 +153,7 @@
 
     // Extract property name
     for(condition in conditions) {
-      if(conditions.hasOwnProperty(condition)) {
+      if(conditions[condition]) {
         key = condition;
         break;
       }
@@ -232,12 +232,12 @@
     var i, l, result = [], list = this;
 
     for(i = 0, l = list.length; i < l; i++) {
-      if(list[i].hasOwnProperty(key) && list[i][key] === value) {
-        result.push(list[i]);
-
+      if(list[i][key] === value) {
         if(one) {
-          break;
+          return list[i];
         }
+
+        result.push(list[i]);
       }
     }
 
@@ -261,7 +261,7 @@
   /* Private helpers (must be .call()ed)
   ============================================================================= */
   
-  function addToIndexe (field, element) {
+  function addToIndex (field, element) {
     var i, l,
         parts,
         indexedValue = '';
@@ -274,7 +274,7 @@
     }
 
     /*jshint validthis:true */
-    if(!this.index[field].hasOwnProperty(indexedValue)) {
+    if(typeof this.index[field][indexedValue] !== 'object') {
       this.index[field][indexedValue] = element;
       return true;
     }
