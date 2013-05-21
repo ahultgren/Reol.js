@@ -42,7 +42,7 @@ you wish to support older browsers (<IE8).
 
 ```javascript
 // Supports deep indexes
-var list = new Heap({
+var list = new Reol({
   test: true,
   'parent.child': true
 });
