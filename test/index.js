@@ -1,6 +1,8 @@
 "use strict";
 
-var should = require('chai').should(),
+var chai = require('chai'),
+    should = chai.should(),
+    expect = chai.expect,
     Reol = require('../.'),
     heap,
     testObj = {
@@ -39,5 +41,44 @@ describe('Basic tests', function () {
 
   it('Deep indexing works', function () {
     heap.find({ 'nested.child': testObj.nested.child }).should.have.property(0).and.equal(testObj);
+  });
+});
+
+describe('findByPath tests', function () {
+  var data = { 
+    yep: "first level",
+    foo: { 
+      yep: "second level",
+      bar: { 
+        yep: "third level",
+        baz: { 
+          yep: "fourth level" 
+        }
+      }
+    }
+  };
+
+  it('finds first level', function () {
+    Reol.findByPath(data, 'yep').should.be.eql("first level");
+  });
+
+  it('finds second level', function () {
+    Reol.findByPath(data, 'foo.yep').should.be.eql("second level");
+  });
+
+  it('finds third level', function () {
+    Reol.findByPath(data, 'foo.bar.yep').should.be.eql("third level");
+  });
+
+  it('returns undefined for unknown deep reference', function () {
+    expect(Reol.findByPath(data, 'foo.bam.yep')).to.be.undefined;
+  });
+
+  it('returns undefined for first level reference', function () {
+    expect(Reol.findByPath(data, 'bam')).to.be.undefined;
+  });
+
+  it('returns undefined for empty reference', function () {
+    expect(Reol.findByPath(data, '')).to.be.undefined;
   });
 });

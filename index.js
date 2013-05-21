@@ -54,16 +54,17 @@
   };
 
   Reol.findByPath = function (element, path) {
-    var next;
-
+    var next, _element;
+    
     path = path.split('.');
-    next = path.shift();
-
-    if(!next) {
-      return element;
+    _element = element;
+    
+    while(path.length && _element) {
+      next = path.shift();
+      _element = _element[next];
     }
-
-    return Reol.findByPath(element[next], path.join('.'));
+    
+    return _element;
   };
 
 
