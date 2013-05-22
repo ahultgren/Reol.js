@@ -294,6 +294,7 @@ List.prototype.toArray = function() {
 "use strict";
 
 var List = require('./List'),
+    Bucket = require('./Bucket'),
     extend = require('./utils').extend,
     Index;
 
@@ -303,7 +304,7 @@ Index = exports = module.exports = function (index, options) {
   this._settings = extend({
     unique: false,
     sparse: false
-  }, typeof options === 'object' && object || {});
+  }, typeof options === 'object' && options || {});
 
   return this;
 };
@@ -313,26 +314,30 @@ Index.prototype = new List();
 Index.prototype.add = function(element) {
   var i, l,
       index = this._index,
-      value = '';
+      value = undefined,
+      bucket;
 
+  // Extract indexable value
   if(index.indexOf('.')) {
     value = List.findByPath(element, index);
   }
-  else if(element[index] || element[index] !== 0) {
+  else if(element[index] !== undefined) {
     value = element[index];
   }
-  
-  // If sparse and nullish
-  if(!value && this._settings.sparse === true) {
+
+  // If sparse and undefined
+  if(value === undefined && this._settings.sparse === true) {
     return false;
   }
 
-  // If unique (let's support non-uniqueness soon)
-  if(typeof this[value] === 'object') {
-    return false;
+  bucket = this[value];
+
+  if(!bucket) {
+    this[value] = bucket = new Bucket(this._settings.unique);
   }
 
-  this[value] = element;
+  bucket.add(element);
+
   return true;
 };
 
@@ -340,7 +345,7 @@ Index.prototype.find = function(value) {
   return this[value];
 };
 
-},{"./List":3,"./utils":5}],5:[function(require,module,exports){
+},{"./List":3,"./Bucket":6,"./utils":5}],5:[function(require,module,exports){
 "use strict";
 
 /**
@@ -362,5 +367,30 @@ exports.extend = function (target) {
   return target;
 };
 
-},{}]},{},[1])
+},{}],6:[function(require,module,exports){
+"use strict";
+
+var List = require('./List'),
+    Bucket;
+
+/**
+ * Bucket
+ *
+ * Pretty much a List which knows if it's unique or not
+ */
+
+
+Bucket = exports = module.exports = function (unique) {
+  this.unique = unique;
+};
+
+Bucket.prototype = new List();
+
+Bucket.prototype.add = function(element) {
+  if(!this.length || !this.unique) {
+    this.push(element);
+  }
+};
+
+},{"./List":3}]},{},[1])
 ;

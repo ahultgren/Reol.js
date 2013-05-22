@@ -16,8 +16,8 @@ var chai = require('chai'),
 describe('Basic tests', function () {
   before(function () {
     heap = new Reol({
-      label1: true,
-      'nested.child': true
+      label1: { unique: true },
+      'nested.child': { sparse: true }
     });
   });
 
@@ -41,12 +41,26 @@ describe('Basic tests', function () {
     heap.find({ label1: 'meow' }).should.be.empty;
   });
 
-  it('Querying on non-index fields works', function () {
+  it('Querying on non-index fields', function () {
     heap.find({ unIndexedField: 'meow' }).should.have.property(0).and.equal(testObj);
   });
 
-  it('Deep indexing works', function () {
+  it('Deep indexing', function () {
     heap.find({ 'nested.child': testObj.nested.child }).should.have.property(0).and.equal(testObj);
+  });
+
+  it('Unique indexing', function () {
+    heap.add(testObj);
+
+    heap.index.label1.test.length.should.equal(1);
+    heap.index['nested.child'][testObj.nested.child].length.should.equal(2);
+  });
+
+  it('Sparse indexing', function () {
+    heap.add({ label1: undefined });
+
+    heap.index.label1.should.have.property(undefined);
+    heap.index['nested.child'].should.not.have.property(undefined);
   });
 });
 
