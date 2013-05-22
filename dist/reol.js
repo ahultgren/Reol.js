@@ -5,7 +5,8 @@ module.exports = require('./lib/Reol');
 },{"./lib/Reol":2}],2:[function(require,module,exports){
 "use strict";
 
-var List = require('./List');
+var List = require('./List'),
+    Index = require('./Index');
 
 /**
  * Reol
@@ -28,7 +29,7 @@ function Reol (fields) {
 
   // Define indexes
   for(field in fields) {
-    this.index[field] = {};
+    this.index[field] = new Index(field, fields[field]);
     this.indexes[field] = fields[field];
   }
 
@@ -74,7 +75,7 @@ Reol.prototype.add = function(element, callback) {
 
   // Add to indexes
   for(field in this.indexes) {
-    addToIndex.call(this, field, element);
+    this.index[field].add(element);
   }
 
   if(callback) {
@@ -165,37 +166,13 @@ Reol.prototype.findOne = function(conditions, callback) {
  */
 
 Reol.prototype.findInIndex = function (key, value) {
-  return this.index[key][value];
+  return this.index[key].find(value);
 };
 
 
-/* Private helpers (must be .call()ed)
-============================================================================= */
-
-function addToIndex (field, element) {
-  var i, l,
-      parts,
-      indexedValue = '';
-
-  if(element[field]) {
-    indexedValue = element[field];
-  }
-  else if(field.indexOf('.')) {
-    indexedValue = List.findByPath(element, field);
-  }
-
-  /*jshint validthis:true */
-  if(typeof this.index[field][indexedValue] !== 'object') {
-    this.index[field][indexedValue] = element;
-    return true;
-  }
-
-  return false;
-}
-
 module.exports = Reol;
 
-},{"./List":3}],3:[function(require,module,exports){
+},{"./List":3,"./Index":4}],3:[function(require,module,exports){
 "use strict";
 
 var utils = require('./utils'),
@@ -313,7 +290,57 @@ List.prototype.toArray = function() {
   return [].slice.call(this);
 };
 
-},{"./utils":4}],4:[function(require,module,exports){
+},{"./utils":5}],4:[function(require,module,exports){
+"use strict";
+
+var List = require('./List'),
+    extend = require('./utils').extend,
+    Index;
+
+
+Index = exports = module.exports = function (index, options) {
+  this._index = index;
+  this._settings = extend({
+    unique: false,
+    sparse: false
+  }, typeof options === 'object' && object || {});
+
+  return this;
+};
+
+Index.prototype = new List();
+
+Index.prototype.add = function(element) {
+  var i, l,
+      index = this._index,
+      value = '';
+
+  if(index.indexOf('.')) {
+    value = List.findByPath(element, index);
+  }
+  else if(element[index] || element[index] !== 0) {
+    value = element[index];
+  }
+  
+  // If sparse and nullish
+  if(!value && this._settings.sparse === true) {
+    return false;
+  }
+
+  // If unique (let's support non-uniqueness soon)
+  if(typeof this[value] === 'object') {
+    return false;
+  }
+
+  this[value] = element;
+  return true;
+};
+
+Index.prototype.find = function(value) {
+  return this[value];
+};
+
+},{"./List":3,"./utils":5}],5:[function(require,module,exports){
 "use strict";
 
 /**
