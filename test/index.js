@@ -52,39 +52,40 @@ describe('Basic tests', function () {
 
 describe('findByPath tests', function () {
   var data = { 
-    yep: "first level",
-    foo: { 
-      yep: "second level",
-      bar: { 
-        yep: "third level",
-        baz: { 
-          yep: "fourth level" 
+        yep: "first level",
+        foo: { 
+          yep: "second level",
+          bar: { 
+            yep: "third level",
+            baz: { 
+              yep: "fourth level" 
+            }
+          }
         }
-      }
-    }
-  };
+      },
+      findByPath = Reol.List.findByPath;
 
   it('finds first level', function () {
-    Reol.findByPath(data, 'yep').should.be.eql("first level");
+    findByPath(data, 'yep').should.be.eql("first level");
   });
 
   it('finds second level', function () {
-    Reol.findByPath(data, 'foo.yep').should.be.eql("second level");
+    findByPath(data, 'foo.yep').should.be.eql("second level");
   });
 
   it('finds third level', function () {
-    Reol.findByPath(data, 'foo.bar.yep').should.be.eql("third level");
+    findByPath(data, 'foo.bar.yep').should.be.eql("third level");
   });
 
   it('returns undefined for unknown deep reference', function () {
-    expect(Reol.findByPath(data, 'foo.bam.yep')).to.be.undefined;
+    expect(findByPath(data, 'foo.bam.yep')).to.be.undefined;
   });
 
   it('returns undefined for first level reference', function () {
-    expect(Reol.findByPath(data, 'bam')).to.be.undefined;
+    expect(findByPath(data, 'bam')).to.be.undefined;
   });
 
   it('returns undefined for empty reference', function () {
-    expect(Reol.findByPath(data, '')).to.be.undefined;
+    expect(findByPath(data, '')).to.be.undefined;
   });
 });

@@ -5,6 +5,8 @@ module.exports = require('./lib/Reol');
 },{"./lib/Reol":2}],2:[function(require,module,exports){
 "use strict";
 
+var List = require('./List');
+
 /**
  * Reol
  *
@@ -19,6 +21,8 @@ module.exports = require('./lib/Reol');
 function Reol (fields) {
   var field;
 
+  List.call(this);
+
   this.index = {};
   this.indexes = {};
 
@@ -31,29 +35,14 @@ function Reol (fields) {
   return this;
 }
 
-Reol.prototype = [];
-
-
-/* Static methods
-============================================================================= */
-
-Reol.findByPath = function (element, path) {
-  var next, _element;
-  
-  path = path.split('.');
-  _element = element;
-  
-  while(path.length && _element) {
-    next = path.shift();
-    _element = _element[next];
-  }
-  
-  return _element;
-};
+// Expose List, just to be nice
+Reol.List = List;
 
 
 /* Public methods
 ============================================================================= */
+
+Reol.prototype = new List();
 
 /**
  * .add()
@@ -86,31 +75,6 @@ Reol.prototype.add = function(element, callback) {
   // Add to indexes
   for(field in this.indexes) {
     addToIndex.call(this, field, element);
-  }
-
-  if(callback) {
-    callback();
-  }
-
-  return this;
-};
-
-
-/**
- * .merge()
- *
- * Adds all elements in an Array or another instance of Reol.
- *
- * @param elements (Reol|Array) Elements to merge
- * @param [callback] (Function) Optional callback
- * @return (Object) this
- */
-
-Reol.prototype.merge = function(elements, callback) {
-  var i, l;
-
-  for(i = 0, l = elements.length; i < l; i++) {
-    this.add(elements[i]);
   }
 
   if(callback) {
@@ -205,6 +169,110 @@ Reol.prototype.findInIndex = function (key, value) {
 };
 
 
+/* Private helpers (must be .call()ed)
+============================================================================= */
+
+function addToIndex (field, element) {
+  var i, l,
+      parts,
+      indexedValue = '';
+
+  if(element[field]) {
+    indexedValue = element[field];
+  }
+  else if(field.indexOf('.')) {
+    indexedValue = List.findByPath(element, field);
+  }
+
+  /*jshint validthis:true */
+  if(typeof this.index[field][indexedValue] !== 'object') {
+    this.index[field][indexedValue] = element;
+    return true;
+  }
+
+  return false;
+}
+
+module.exports = Reol;
+
+},{"./List":3}],3:[function(require,module,exports){
+"use strict";
+
+var utils = require('./utils'),
+    List;
+
+/**
+ * List
+ *
+ * "Class" inherited by all other array-like objects to provide some common
+ * methods.
+ */
+
+exports = module.exports = List = function (options) {
+  utils.extend(this, options);  
+};
+
+
+/* Static methods
+============================================================================= */
+
+// Find a property by path, eg "level1.level2"
+List.findByPath = function (element, path) {
+  var next, _element;
+  
+  path = path.split('.');
+  _element = element;
+  
+  while(path.length && _element) {
+    next = path.shift();
+    _element = _element[next];
+  }
+  
+  return _element;
+};
+
+
+/* Public methods
+============================================================================= */
+
+List.prototype = [];
+
+/**
+ * .add(Object)
+ *
+ * Basic add. Most subclasses will overwrite it
+ */
+
+List.prototype.add = function(element) {
+  this.push(element);
+};
+
+
+/**
+ * .merge()
+ *
+ * Adds all elements in an Array or another instance of List.
+ *
+ * @param elements (List|Array) Elements to merge
+ * @param [callback] (Function) Optional callback
+ * @return (Object) this
+ */
+
+List.prototype.merge = function(elements, callback) {
+  var i, l;
+
+  for(i = 0, l = elements.length; i < l; i++) {
+    this.add(elements[i]);
+  }
+
+  if(callback) {
+    callback();
+  }
+
+  return this;
+};
+
+
 /**
  * .findInList()
  *
@@ -216,7 +284,7 @@ Reol.prototype.findInIndex = function (key, value) {
  * @return (Array) Found elements.
  */
 
-Reol.prototype.findInList = function(key, value, one) {
+List.prototype.findInList = function(key, value, one) {
   var i, l, result = [], list = this;
 
   for(i = 0, l = list.length; i < l; i++) {
@@ -236,41 +304,36 @@ Reol.prototype.findInList = function(key, value, one) {
 /**
  * .toArray()
  *
- * Basically just returns this, but use this anyway in case of API changes
+ * Returning a copy of this as an array.
  *
  * @return (Array) Everything
  */
 
-Reol.prototype.toArray = function() {
-  return this;
+List.prototype.toArray = function() {
+  return [].slice.call(this);
 };
 
+},{"./utils":4}],4:[function(require,module,exports){
+"use strict";
 
-/* Private helpers (must be .call()ed)
-============================================================================= */
+/**
+ * utils
+ *
+ * Just some handy helpers
+ */
 
-function addToIndex (field, element) {
-  var i, l,
-      parts,
-      indexedValue = '';
+exports.extend = function (target) {
+  var sources = [].slice.call(arguments),
+      source, prop;
 
-  if(element[field]) {
-    indexedValue = element[field];
-  }
-  else if(field.indexOf('.')) {
-    indexedValue = Reol.findByPath(element, field);
-  }
-
-  /*jshint validthis:true */
-  if(typeof this.index[field][indexedValue] !== 'object') {
-    this.index[field][indexedValue] = element;
-    return true;
+  while(!!(source = sources.shift())) {
+    for(prop in source) {
+      target[prop] = source[prop];
+    }
   }
 
-  return false;
-}
-
-module.exports = Reol;
+  return target;
+};
 
 },{}]},{},[1])
 ;
