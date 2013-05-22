@@ -38,20 +38,6 @@
 
   /* Static methods
   ============================================================================= */
-  
-  Reol.stringify = function (value) {
-    var newValue = '', field;
-
-    //## Should undefined and null be converted to empty strings?..
-    if(typeof value === 'object') {
-      newValue = JSON.stringify(value);
-    }
-    else {
-      newValue = value + '';
-    }
-
-    return newValue;
-  };
 
   Reol.findByPath = function (element, path) {
     var next, _element;
@@ -85,7 +71,6 @@
   
   Reol.prototype.add = function(element, callback) {
     var err, field;
-    callback = callback || function(){};
 
     if(typeof element !== 'object') {
       err = new Error('Sorry, this class only works with objects.');
@@ -103,6 +88,10 @@
     // Add to indexes
     for(field in this.indexes) {
       addToIndex.call(this, field, element);
+    }
+
+    if(callback) {
+      callback();
     }
 
     return this;
@@ -214,7 +203,7 @@
    */
 
   Reol.prototype.findInIndex = function (key, value) {
-    return this.index[key][Reol.stringify(value)];
+    return this.index[key][value];
   };
 
 
@@ -268,10 +257,10 @@
         indexedValue = '';
 
     if(element[field]) {
-      indexedValue = Reol.stringify(element[field]);
+      indexedValue = element[field];
     }
     else if(field.indexOf('.')) {
-      indexedValue = Reol.stringify(Reol.findByPath(element, field));
+      indexedValue = Reol.findByPath(element, field);
     }
 
     /*jshint validthis:true */

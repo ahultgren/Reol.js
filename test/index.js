@@ -27,6 +27,12 @@ describe('Basic tests', function () {
     heap.toArray().length.should.equal(1);
   });
 
+  it('Non-objects are not added', function () {
+    expect(function(){
+      heap.add('Throw it please');
+    }).to.throw(Error);
+  });
+
   it('Things are found', function () {
     heap.find({ label1: 'test' }).should.have.property(0).and.equal(testObj);
   });
