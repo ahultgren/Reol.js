@@ -10,7 +10,8 @@ module.exports = function(grunt) {
         curly: true,
         eqeqeq: true,
         eqnull: true,
-        strict: true
+        globalstrict: true,
+        node: true
       },
       lib: {
         files: {
@@ -30,10 +31,13 @@ module.exports = function(grunt) {
         }
       }
     },
+    browserify: {
+      'dist/reol.js': 'index.js'
+    },
     uglify: {
       browser: {
         files: {
-          'dist/reol.min.js': ['index.js']
+          'dist/reol.min.js': ['dist/reol.js']
         }
       }
     }
@@ -41,8 +45,9 @@ module.exports = function(grunt) {
 
   // npm tasks
   grunt.loadNpmTasks('grunt-contrib-jshint');
+  grunt.loadNpmTasks('grunt-browserify');
   grunt.loadNpmTasks('grunt-contrib-uglify');
 
   // Default task.
-  grunt.registerTask('default', ['jshint', 'uglify']);
+  grunt.registerTask('default', ['jshint', 'browserify', 'uglify']);
 };

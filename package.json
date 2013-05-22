@@ -20,9 +20,8 @@
     "grunt": "~0.4.1",
     "grunt-contrib-jshint": "~0.5.0",
     "benchmark": "~1.0.0",
-    "async": "~0.2.8"
-  },
-  "dependencies": {
+    "async": "~0.2.8",
+    "grunt-browserify": "~1.0.2",
     "grunt-contrib-uglify": "~0.2.0"
   }
 }
