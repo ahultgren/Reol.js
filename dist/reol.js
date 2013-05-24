@@ -44,6 +44,7 @@ Reol.List = List;
 ============================================================================= */
 
 Reol.prototype = new List();
+Reol.prototype.constructor = Reol;
 
 /**
  * .add()
@@ -290,6 +291,63 @@ List.prototype.toArray = function() {
   return [].slice.call(this);
 };
 
+
+/**
+ * .filter()
+ *
+ * Returns a new List of elements matching the conditions
+ *
+ * @param paramName (type) Description
+ * @return (type) Description
+ */
+
+List.prototype.filter = function(conditions) {
+  var result = new this.constructor(),
+      matcher = typeof conditions === 'function' ? conditions : match(conditions),
+      i, l;
+
+  if(Array.prototype.filter) {
+    return result.merge([].filter.call(this, matcher));
+  }
+
+  // Custom filter implementation
+  for(i = 0, l = this.length; i < l; i++) {
+    if(match(this[i])) {
+      result.add(this[i]);
+    }
+  }
+
+  return result;
+};
+
+/* Private functions
+============================================================================= */
+
+
+/**
+ * match()
+ *
+ * Whether or not an element matches some conditions
+ *
+ * @param conditions (Object) Conditions
+ * @return (Function)
+ *  @param element (Object) Element to be matched
+ *  @return (Boolean) Match or not
+ */
+
+function match (conditions) {
+  return function (element) {
+    var i;
+
+    for(i in conditions) {
+      if(List.findByPath(element, i) !== conditions[i]) {
+        return false;
+      }
+    }
+
+    return true;
+  };
+}
 },{"./utils":5}],4:[function(require,module,exports){
 "use strict";
 
@@ -310,11 +368,12 @@ Index = exports = module.exports = function (index, options) {
 };
 
 Index.prototype = new List();
+Index.prototype.constructor = Index;
 
 Index.prototype.add = function(element) {
   var i, l,
       index = this._index,
-      value = undefined,
+      value,
       bucket;
 
   // Extract indexable value
@@ -385,6 +444,7 @@ Bucket = exports = module.exports = function (unique) {
 };
 
 Bucket.prototype = new List();
+Bucket.prototype.constructor = Bucket;
 
 Bucket.prototype.add = function(element) {
   if(!this.length || !this.unique) {
