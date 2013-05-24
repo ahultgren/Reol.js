@@ -1,3 +1,5 @@
+"use strict";
+
 var Reol = require('../.'),
     Benchmark = require('Benchmark'),
     async = require('async'),

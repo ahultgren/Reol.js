@@ -1,5 +1,7 @@
 "use strict";
 
+/*global it: true, before: true, describe:true*/
+/*jshint expr:true*/
 var chai = require('chai'),
     should = chai.should(),
     expect = chai.expect,
@@ -61,6 +63,13 @@ describe('Basic tests', function () {
 
     heap.index.label1.should.have.property(undefined);
     heap.index['nested.child'].should.not.have.property(undefined);
+  });
+
+  it('Filtering with object', function () {
+    var test = heap.find({ label1: testObj.label1 }).filter({ 'nested.child': testObj.nested.child });
+
+    test.length.should.equal(1);
+    test.should.have.property(0).and.equal(testObj);
   });
 });
 
