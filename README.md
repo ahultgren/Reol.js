@@ -101,6 +101,10 @@ _Ordered somewhat by simpleness and likelihood of being implemented._
 * Reindexing objects whose indexed field has changed
 
 
+## Run benchmark
+
+    grunt shell:benchmark
+
 ## Contribution
 
 I just threw this together in a few hours to solve my problem at hand. If you

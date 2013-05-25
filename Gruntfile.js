@@ -36,6 +36,14 @@ module.exports = function(grunt) {
           'dist/reol.min.js': ['index.js']
         }
       }
+    },
+    shell: {
+      benchmark: {
+        command: 'node benchmark.js',
+        options: {
+          stdout: true
+        }
+      }
     }
   });
 
@@ -45,4 +53,6 @@ module.exports = function(grunt) {
 
   // Default task.
   grunt.registerTask('default', ['jshint', 'uglify']);
+
+  grunt.loadNpmTasks('grunt-shell');
 };
