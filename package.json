@@ -18,7 +18,9 @@
   "devDependencies": {
     "chai": "~1.6.0",
     "grunt": "~0.4.1",
-    "grunt-contrib-jshint": "~0.5.0"
+    "grunt-contrib-jshint": "~0.5.0",
+    "bnch": "~0.0.3",
+    "grunt-shell": "~0.2.2"
   },
   "dependencies": {
     "grunt-contrib-uglify": "~0.2.0"
