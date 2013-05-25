@@ -82,7 +82,7 @@ list.findOne({ woot: 'mooo' });
 
 ## Caveats
 
-Current version does not support non-unique indexes or queries on multiple fields.
+Current version does not support queries on multiple fields.
 This will be added, see [Todo](#todo).
 
 

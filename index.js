@@ -137,7 +137,6 @@
    * .find()
    *
    * Find all elements matching the conditions.
-   * an array with one element.
    *
    * @param conditions (object) One (1!) condition to match. Multiple conditions will
    *  be supported later.
@@ -167,14 +166,12 @@
 
     // Find in index
     if(this.index[key]) {
-      result = this.findInIndex(key, conditions[key]);
+      result = this.findInIndex(key, conditions[key], one);
     }
     // Find in list
     else {
       result = this.findInList(key, conditions[key], one);
     }
-
-    result = !result && [] || result.length !== undefined && result || [result];
 
     callback(null, result);
     return result;
@@ -204,16 +201,24 @@
   /**
    * .findInIndex()
    *
-   * Find an element in a specified index. Use this without being sure that the
-   * index exists and the sky will fall on your head.
+   * Find all elements in a specified index.
    *
    * @param key (string) The name of the index/field to match
    * @param value (string) The value to match
    * @return (Array) Found elements.
    */
 
-  Reol.prototype.findInIndex = function (key, value) {
-    return this.index[key][Reol.stringify(value)];
+  Reol.prototype.findInIndex = function (key, value, one) {
+    var ret = [],
+        index = this.index[key][Reol.stringify(value)];
+
+    if (typeof index == 'undefined') return ret;
+
+    for (var i = 0, l = index.length; i < l; i++) {
+      ret.push(index[i]);
+      if (one) break;
+    }
+    return ret;
   };
 
 
@@ -275,11 +280,9 @@
 
     /*jshint validthis:true */
     if(!this.index[field].hasOwnProperty(indexedValue)) {
-      this.index[field][indexedValue] = element;
-      return true;
+      this.index[field][indexedValue] = [];
     }
-
-    return false;
+    this.index[field][indexedValue].push(element);
   }
   
 
