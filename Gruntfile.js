@@ -30,7 +30,11 @@ module.exports = function(grunt) {
       }
     },
     browserify: {
-      'dist/reol.js': 'index.js'
+      options: {
+        externalize: ['./lib/Reol'],
+        alias: 'index.js:Reol'
+      },
+      'dist/reol.js': ['index.js']
     },
     uglify: {
       browser: {

@@ -1,8 +1,14 @@
-;(function(e,t,n){function i(n,s){if(!t[n]){if(!e[n]){var o=typeof require=="function"&&require;if(!s&&o)return o(n,!0);if(r)return r(n,!0);throw new Error("Cannot find module '"+n+"'")}var u=t[n]={exports:{}};e[n][0].call(u.exports,function(t){var r=e[n][1][t];return i(r?r:t)},u,u.exports)}return t[n].exports}var r=typeof require=="function"&&require;for(var s=0;s<n.length;s++)i(n[s]);return i})({1:[function(require,module,exports){
-"use strict";
+require=(function(e,t,n){function i(n,s){if(!t[n]){if(!e[n]){var o=typeof require=="function"&&require;if(!s&&o)return o(n,!0);if(r)return r(n,!0);throw new Error("Cannot find module '"+n+"'")}var u=t[n]={exports:{}};e[n][0].call(u.exports,function(t){var r=e[n][1][t];return i(r?r:t)},u,u.exports)}return t[n].exports}var r=typeof require=="function"&&require;for(var s=0;s<n.length;s++)i(n[s]);return i})({"Reol":[function(require,module,exports){
+module.exports=require('oF0Uok');
+},{}],"oF0Uok":[function(require,module,exports){
+(function(){"use strict";
 module.exports = require('./lib/Reol');
+/*jshint expr:true*/
+/*global window:true*/
+typeof window !== 'undefined' && (window.Reol = module.exports);
 
-},{"./lib/Reol":2}],2:[function(require,module,exports){
+})()
+},{"./lib/Reol":1}],1:[function(require,module,exports){
 "use strict";
 
 var List = require('./List'),
@@ -173,7 +179,7 @@ Reol.prototype.findInIndex = function (key, value) {
 
 module.exports = Reol;
 
-},{"./List":3,"./Index":4}],3:[function(require,module,exports){
+},{"./List":2,"./Index":3}],2:[function(require,module,exports){
 "use strict";
 
 var utils = require('./utils'),
@@ -348,7 +354,7 @@ function match (conditions) {
     return true;
   };
 }
-},{"./utils":5}],4:[function(require,module,exports){
+},{"./utils":4}],3:[function(require,module,exports){
 "use strict";
 
 var List = require('./List'),
@@ -404,7 +410,7 @@ Index.prototype.find = function(value) {
   return this[value];
 };
 
-},{"./List":3,"./Bucket":6,"./utils":5}],5:[function(require,module,exports){
+},{"./List":2,"./Bucket":5,"./utils":4}],4:[function(require,module,exports){
 "use strict";
 
 /**
@@ -426,7 +432,7 @@ exports.extend = function (target) {
   return target;
 };
 
-},{}],6:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 "use strict";
 
 var List = require('./List'),
@@ -452,5 +458,5 @@ Bucket.prototype.add = function(element) {
   }
 };
 
-},{"./List":3}]},{},[1])
+},{"./List":2}]},{},["oF0Uok"])
 ;
