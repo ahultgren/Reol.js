@@ -20,7 +20,7 @@ not need to be removed.
 
 About twice as fast for tiny arrays (10 elements) and infintely faster for large (10000 elements) arrays.
 
-See [this jsperf test](http://jsperf.com/reol-js-vs-naive-search) for exact data
+See [this jsperf test](http://jsperf.com/reol-js-vs-naive-search/5) for exact data
 and to verify in your own environment.
 
 
