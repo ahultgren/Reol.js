@@ -3,4 +3,7 @@ test:
 	grunt
 	mocha $(TESTS)
 
-.PHONY: test
+benchmark:
+	node benchmark/index.js
+
+.PHONY: test benchmark

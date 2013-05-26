@@ -1,8 +1,6 @@
-/*global module:false*/
-module.exports = function(grunt) {
-  "use strict";
+"use strict";
 
-  // Project configuration.
+module.exports = function(grunt) {
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
     jshint: {
@@ -10,11 +8,12 @@ module.exports = function(grunt) {
         curly: true,
         eqeqeq: true,
         eqnull: true,
-        strict: true
+        globalstrict: true,
+        node: true
       },
       lib: {
         files: {
-          src: ['Gruntfile.js', 'index.js', 'package.json']
+          src: ['Gruntfile.js', 'index.js', 'package.json', 'lib/*.js', 'test/*.js', 'benchmark/*.js']
         }
       },
       test: {
@@ -30,10 +29,17 @@ module.exports = function(grunt) {
         }
       }
     },
+    browserify: {
+      options: {
+        externalize: ['./lib/Reol'],
+        alias: 'index.js:Reol'
+      },
+      'dist/reol.js': ['index.js']
+    },
     uglify: {
       browser: {
         files: {
-          'dist/reol.min.js': ['index.js']
+          'dist/reol.min.js': ['dist/reol.js']
         }
       }
     }
@@ -41,8 +47,9 @@ module.exports = function(grunt) {
 
   // npm tasks
   grunt.loadNpmTasks('grunt-contrib-jshint');
+  grunt.loadNpmTasks('grunt-browserify');
   grunt.loadNpmTasks('grunt-contrib-uglify');
 
   // Default task.
-  grunt.registerTask('default', ['jshint', 'uglify']);
+  grunt.registerTask('default', ['jshint', 'browserify', 'uglify']);
 };

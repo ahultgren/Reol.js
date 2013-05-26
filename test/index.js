@@ -1,6 +1,10 @@
 "use strict";
 
-var should = require('chai').should(),
+/*global it: true, before: true, describe:true*/
+/*jshint expr:true*/
+var chai = require('chai'),
+    should = chai.should(),
+    expect = chai.expect,
     Reol = require('../.'),
     heap,
     testObj = {
@@ -14,8 +18,8 @@ var should = require('chai').should(),
 describe('Basic tests', function () {
   before(function () {
     heap = new Reol({
-      label1: true,
-      'nested.child': true
+      label1: { unique: true },
+      'nested.child': { sparse: true }
     });
   });
 
@@ -23,6 +27,12 @@ describe('Basic tests', function () {
     heap.add(testObj);
 
     heap.toArray().length.should.equal(1);
+  });
+
+  it('Non-objects are not added', function () {
+    expect(function(){
+      heap.add('Throw it please');
+    }).to.throw(Error);
   });
 
   it('Things are found', function () {
@@ -33,11 +43,72 @@ describe('Basic tests', function () {
     heap.find({ label1: 'meow' }).should.be.empty;
   });
 
-  it('Querying on non-index fields works', function () {
+  it('Querying on non-index fields', function () {
     heap.find({ unIndexedField: 'meow' }).should.have.property(0).and.equal(testObj);
   });
 
-  it('Deep indexing works', function () {
+  it('Deep indexing', function () {
     heap.find({ 'nested.child': testObj.nested.child }).should.have.property(0).and.equal(testObj);
+  });
+
+  it('Unique indexing', function () {
+    heap.add(testObj);
+
+    heap.index.label1.test.length.should.equal(1);
+    heap.index['nested.child'][testObj.nested.child].length.should.equal(2);
+  });
+
+  it('Sparse indexing', function () {
+    heap.add({ label1: undefined });
+
+    heap.index.label1.should.have.property(undefined);
+    heap.index['nested.child'].should.not.have.property(undefined);
+  });
+
+  it('Filtering with object', function () {
+    var test = heap.find({ label1: testObj.label1 }).filter({ 'nested.child': testObj.nested.child });
+
+    test.length.should.equal(1);
+    test.should.have.property(0).and.equal(testObj);
+  });
+});
+
+describe('findByPath tests', function () {
+  var data = { 
+        yep: "first level",
+        foo: { 
+          yep: "second level",
+          bar: { 
+            yep: "third level",
+            baz: { 
+              yep: "fourth level" 
+            }
+          }
+        }
+      },
+      findByPath = Reol.List.findByPath;
+
+  it('finds first level', function () {
+    findByPath(data, 'yep').should.be.eql("first level");
+  });
+
+  it('finds second level', function () {
+    findByPath(data, 'foo.yep').should.be.eql("second level");
+  });
+
+  it('finds third level', function () {
+    findByPath(data, 'foo.bar.yep').should.be.eql("third level");
+  });
+
+  it('returns undefined for unknown deep reference', function () {
+    expect(findByPath(data, 'foo.bam.yep')).to.be.undefined;
+  });
+
+  it('returns undefined for first level reference', function () {
+    expect(findByPath(data, 'bam')).to.be.undefined;
+  });
+
+  it('returns undefined for empty reference', function () {
+    expect(findByPath(data, '')).to.be.undefined;
   });
 });
