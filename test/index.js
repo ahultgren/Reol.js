@@ -103,6 +103,16 @@ describe('Basic tests', function () {
     heap.should.have.property(0).and.equal(test);
     heap.should.have.property(1).and.equal(test2);
   });
+
+  it('.concat()', function () {
+    var data = [{ label1: 'concat1' }, { label1: 'concat2' }],
+        test = heap.concat(data);
+
+    test.length.should.equal(heap.length + data.length);
+    test.should.have.property(0).and.equal(heap[0]);
+    test.should.have.property(heap.length).and.equal(data[0]);
+    test.should.have.property(heap.length + 1).and.equal(data[1]);
+  });
 });
 
 describe('findByPath tests', function () {

@@ -354,6 +354,20 @@ List.prototype.unshift = function() {
   }
 };
 
+List.prototype.concat = function() {
+  var result = new List(),
+      src = arguments,
+      i, l;
+
+  result.merge(this);
+
+  for(i = 0, l = src.length; i < l; i++) {
+    result.merge(src[i]);
+  }
+
+  return result;
+};
+
 },{"./utils":4}],3:[function(require,module,exports){
 "use strict";
 
