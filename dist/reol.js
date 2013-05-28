@@ -413,26 +413,43 @@ List.prototype.concat = function() {
 
 var List = require('./List'),
     Bucket = require('./Bucket'),
-    extend = require('./utils').extend,
     Index;
 
 
+/**
+ * Index
+ *
+ * Class for storing objects in a hash where the property is a certain key of
+ * each object. 
+ *
+ * @param index (String) Property to index
+ * @param [options] (Object) Property to index
+ *  @param unique (Boolean) If true, elements will be added only if the indexed
+ *    property has not been indexed already
+ *  @param sparse (Boolean) If true, undefined values will not be added (note
+ *    that other falsey values are not considered undefined)
+ * @return (Object) this
+ */
+
 Index = exports = module.exports = function (index, options) {
-  this._index = index;
-  this._settings = extend({
-    unique: false,
-    sparse: false
-  }, typeof options === 'object' && options || {});
+  this.elements = {};
+  this.index = index;
+
+  options = options || {};
+  this.unique = options.unique || false;
+  this.sparse = options.sparse || false;
 
   return this;
 };
 
-Index.prototype = new List();
-Index.prototype.constructor = Index;
+
+/* Public methods
+============================================================================= */
 
 Index.prototype.add = function(element) {
   var i, l,
-      index = this._index,
+      elements = this.elements,
+      index = this.index,
       value,
       bucket;
 
@@ -445,14 +462,14 @@ Index.prototype.add = function(element) {
   }
 
   // If sparse and undefined
-  if(value === undefined && this._settings.sparse === true) {
+  if(value === undefined && this.sparse === true) {
     return false;
   }
 
-  bucket = this[value];
+  bucket = elements[value];
 
   if(!bucket) {
-    this[value] = bucket = new Bucket(this._settings.unique);
+    elements[value] = bucket = new Bucket(this.unique);
   }
 
   bucket.add(element);
@@ -460,11 +477,12 @@ Index.prototype.add = function(element) {
   return true;
 };
 
+
 Index.prototype.find = function(value) {
-  return this[value];
+  return this.elements[value];
 };
 
-},{"./List":2,"./Bucket":5,"./utils":4}],4:[function(require,module,exports){
+},{"./List":2,"./Bucket":5}],4:[function(require,module,exports){
 "use strict";
 
 /**

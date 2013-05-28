@@ -54,15 +54,15 @@ describe('Basic tests', function () {
   it('Unique indexing', function () {
     heap.add(testObj);
 
-    heap.index.label1.test.length.should.equal(1);
-    heap.index['nested.child'][testObj.nested.child].length.should.equal(2);
+    heap.index.label1.elements.test.length.should.equal(1);
+    heap.index['nested.child'].elements[testObj.nested.child].length.should.equal(2);
   });
 
   it('Sparse indexing', function () {
     heap.add({ label1: undefined });
 
-    heap.index.label1.should.have.property(undefined);
-    heap.index['nested.child'].should.not.have.property(undefined);
+    heap.index.label1.elements.should.have.property(undefined);
+    heap.index['nested.child'].elements.should.not.have.property(undefined);
   });
 
   it('Filtering with object', function () {
