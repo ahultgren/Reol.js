@@ -113,6 +113,22 @@ describe('Basic tests', function () {
     test.should.have.property(heap.length).and.equal(data[0]);
     test.should.have.property(heap.length + 1).and.equal(data[1]);
   });
+
+  it('.map()', function () {
+    var extractor = function (element) {
+          return element.label1;
+        },
+        test1 = heap.map('label1'),
+        test2 = heap.map(extractor),
+        i;
+
+    test1.length.should.equal(test2.length);
+    test1.length.should.equal(heap.length);
+
+    for(i = test1.length; i--;) {
+      expect(test1[i]).to.equal(test2[i]);
+    }
+  });
 });
 
 describe('findByPath tests', function () {

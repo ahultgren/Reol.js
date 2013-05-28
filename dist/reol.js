@@ -308,6 +308,29 @@ List.prototype.filter = function(conditions) {
 };
 
 
+/**
+ * .map()
+ *
+ * Regular Array.map() method whith the added ability to specify a property to
+ * auto map.
+ *
+ * @param property (String) Name
+ * @return (type) Description
+ */
+
+List.prototype.map = function(property) {
+  var result = new List(),
+      extractor = typeof property === 'function' ? property : extract(property),
+      i, l;
+
+  for(i = 0, l = this.length; i < l; i++) {
+    result.add(extractor(this[i]));
+  }
+
+  return result;
+};
+
+
 /* Private functions
 ============================================================================= */
 
@@ -334,6 +357,22 @@ function match (conditions) {
     }
 
     return true;
+  };
+}
+
+
+/**
+ * extract()
+ *
+ * Return the property of an element
+ *
+ * @param paramName (type) Description
+ * @return (type) Description
+ */
+
+function extract (property) {
+  return function (element) {
+    return List.findByPath(element, property);
   };
 }
 
