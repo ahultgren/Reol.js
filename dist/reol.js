@@ -60,33 +60,22 @@ Reol.prototype.constructor = Reol;
  * in other indexes and in the list.
  *
  * @param element (Object) Object to be indexed
- * @param [callback] (Function) Optional callback
  * @return (Reol) this
  */
 
-Reol.prototype.add = function(element, callback) {
+Reol.prototype.add = function(element, _where) {
   var err, field;
 
   if(typeof element !== 'object') {
-    err = new Error('Sorry, this class only works with objects.');
-    if(callback) {
-      callback(err);
-    }
-    else {
-      throw err;
-    }
+    throw new Error('Sorry, this class only works with objects.');
   }
 
   // Add to list
-  this.push(element);
+  List.prototype.add.call(this, element, _where);
 
   // Add to indexes
   for(field in this.indexes) {
     this.index[field].add(element);
-  }
-
-  if(callback) {
-    callback();
   }
 
   return this;
@@ -101,15 +90,12 @@ Reol.prototype.add = function(element, callback) {
  *
  * @param conditions (object) One (1!) condition to match. Multiple conditions will
  *  be supported later.
- * @param [callback] (Function) Optional callback
  * @param [one] (Boolean) If true will only return one element
  * @return (Array|Object|undefined) The found elements
  */
 
-Reol.prototype.find = function(conditions, callback, one) {
+Reol.prototype.find = function(conditions, one) {
   var key, condition, result;
-
-  callback = callback || function(){};
 
   // Extract property name
   for(condition in conditions) {
@@ -121,7 +107,6 @@ Reol.prototype.find = function(conditions, callback, one) {
 
   // Return eveything
   if(!key) {
-    callback(this.toArray());
     return this.toArray();
   }
 
@@ -136,7 +121,6 @@ Reol.prototype.find = function(conditions, callback, one) {
 
   result = !result && [] || result.length !== undefined && result || [result];
 
-  callback(null, result);
   return result;
 };
 
@@ -148,16 +132,11 @@ Reol.prototype.find = function(conditions, callback, one) {
  *
  * @param conditions (Object) One (1!) condition to match. Multiple conditions will
  *  be supported later.
- * @param [callback] (Function) Optional callback
  * @return (Object|undefined) The element found if found
  */
 
-Reol.prototype.findOne = function(conditions, callback) {
-  return this.find(conditions, function (err, result) {
-    if(callback) {
-      callback(err, result[0]);
-    }
-  }, true)[0];
+Reol.prototype.findOne = function(conditions) {
+  return this.find(conditions, true)[0];
 };
 
 
@@ -227,8 +206,15 @@ List.prototype = [];
  * Basic add. Most subclasses will overwrite it
  */
 
-List.prototype.add = function(element) {
-  this.push(element);
+List.prototype.add = function(element, _where) {
+  _where = Number(_where);
+
+  if(isNaN(_where)) {
+    Array.prototype.push.call(this, element);
+  }
+  else {
+    Array.prototype.splice.call(this, _where, 0, element);
+  }
 };
 
 
@@ -238,19 +224,14 @@ List.prototype.add = function(element) {
  * Adds all elements in an Array or another instance of List.
  *
  * @param elements (List|Array) Elements to merge
- * @param [callback] (Function) Optional callback
  * @return (Object) this
  */
 
-List.prototype.merge = function(elements, callback) {
+List.prototype.merge = function(elements) {
   var i, l;
 
   for(i = 0, l = elements.length; i < l; i++) {
     this.add(elements[i]);
-  }
-
-  if(callback) {
-    callback();
   }
 
   return this;
@@ -303,12 +284,12 @@ List.prototype.toArray = function() {
  *
  * Returns a new List of elements matching the conditions
  *
- * @param paramName (type) Description
- * @return (type) Description
+ * @param conditions (Object|Function) The conditions to match or comparing method
+ * @return (List) The matched set
  */
 
 List.prototype.filter = function(conditions) {
-  var result = new this.constructor(),
+  var result = new List(),
       matcher = typeof conditions === 'function' ? conditions : match(conditions),
       i, l;
 
@@ -325,6 +306,30 @@ List.prototype.filter = function(conditions) {
 
   return result;
 };
+
+
+/**
+ * .map()
+ *
+ * Regular Array.map() method whith the added ability to specify a property to
+ * auto map.
+ *
+ * @param property (String) Name
+ * @return (type) Description
+ */
+
+List.prototype.map = function(property) {
+  var result = new List(),
+      extractor = typeof property === 'function' ? property : extract(property),
+      i, l;
+
+  for(i = 0, l = this.length; i < l; i++) {
+    result.add(extractor(this[i]));
+  }
+
+  return result;
+};
+
 
 /* Private functions
 ============================================================================= */
@@ -354,6 +359,55 @@ function match (conditions) {
     return true;
   };
 }
+
+
+/**
+ * extract()
+ *
+ * Return the property of an element
+ *
+ * @param paramName (type) Description
+ * @return (type) Description
+ */
+
+function extract (property) {
+  return function (element) {
+    return List.findByPath(element, property);
+  };
+}
+
+
+/* Aliases for imitating an array
+============================================================================= */
+
+List.prototype.push = function() {
+  this.merge(arguments);
+};
+
+List.prototype.unshift = function() {
+  var i, element;
+
+  // Add each element to the beginning, backwards
+  for(i = arguments.length; i--;) {
+    element = arguments[i];
+    this.add(element, 0);
+  }
+};
+
+List.prototype.concat = function() {
+  var result = new List(),
+      src = arguments,
+      i, l;
+
+  result.merge(this);
+
+  for(i = 0, l = src.length; i < l; i++) {
+    result.merge(src[i]);
+  }
+
+  return result;
+};
+
 },{"./utils":4}],3:[function(require,module,exports){
 "use strict";
 
@@ -452,9 +506,9 @@ Bucket = exports = module.exports = function (unique) {
 Bucket.prototype = new List();
 Bucket.prototype.constructor = Bucket;
 
-Bucket.prototype.add = function(element) {
+Bucket.prototype.add = function(element, _where) {
   if(!this.length || !this.unique) {
-    this.push(element);
+    List.prototype.add.call(this, element, _where);
   }
 };
 

@@ -71,6 +71,64 @@ describe('Basic tests', function () {
     test.length.should.equal(1);
     test.should.have.property(0).and.equal(testObj);
   });
+
+  it('.push()', function () {
+    var before = heap.length,
+        test = {
+          label1: 'TEST'
+        },
+        test2 = {
+          label1: 'TEST2'
+        };
+
+    heap.push(test, test2);
+
+    heap.length.should.equal(before+2);
+    heap.should.have.property(before).and.equal(test);
+    heap.should.have.property(before+1).and.equal(test2);
+  });
+
+  it('.unshift()', function () {
+    var before = heap.length,
+        test = {
+          label1: 'TEST'
+        },
+        test2 = {
+          label1: 'TEST2'
+        };
+
+    heap.unshift(test, test2);
+
+    heap.length.should.equal(before+2);
+    heap.should.have.property(0).and.equal(test);
+    heap.should.have.property(1).and.equal(test2);
+  });
+
+  it('.concat()', function () {
+    var data = [{ label1: 'concat1' }, { label1: 'concat2' }],
+        test = heap.concat(data);
+
+    test.length.should.equal(heap.length + data.length);
+    test.should.have.property(0).and.equal(heap[0]);
+    test.should.have.property(heap.length).and.equal(data[0]);
+    test.should.have.property(heap.length + 1).and.equal(data[1]);
+  });
+
+  it('.map()', function () {
+    var extractor = function (element) {
+          return element.label1;
+        },
+        test1 = heap.map('label1'),
+        test2 = heap.map(extractor),
+        i;
+
+    test1.length.should.equal(test2.length);
+    test1.length.should.equal(heap.length);
+
+    for(i = test1.length; i--;) {
+      expect(test1[i]).to.equal(test2[i]);
+    }
+  });
 });
 
 describe('findByPath tests', function () {
