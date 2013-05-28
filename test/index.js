@@ -71,6 +71,38 @@ describe('Basic tests', function () {
     test.length.should.equal(1);
     test.should.have.property(0).and.equal(testObj);
   });
+
+  it('.push()', function () {
+    var before = heap.length,
+        test = {
+          label1: 'TEST'
+        },
+        test2 = {
+          label1: 'TEST2'
+        };
+
+    heap.push(test, test2);
+
+    heap.length.should.equal(before+2);
+    heap.should.have.property(before).and.equal(test);
+    heap.should.have.property(before+1).and.equal(test2);
+  });
+
+  it('.unshift()', function () {
+    var before = heap.length,
+        test = {
+          label1: 'TEST'
+        },
+        test2 = {
+          label1: 'TEST2'
+        };
+
+    heap.unshift(test, test2);
+
+    heap.length.should.equal(before+2);
+    heap.should.have.property(0).and.equal(test);
+    heap.should.have.property(1).and.equal(test2);
+  });
 });
 
 describe('findByPath tests', function () {

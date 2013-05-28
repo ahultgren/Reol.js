@@ -71,7 +71,7 @@ Reol.prototype.add = function(element, _where) {
   }
 
   // Add to list
-  this.push(element);
+  List.prototype.add.call(this, element, _where);
 
   // Add to indexes
   for(field in this.indexes) {
@@ -206,8 +206,15 @@ List.prototype = [];
  * Basic add. Most subclasses will overwrite it
  */
 
-List.prototype.add = function(element) {
-  this.push(element);
+List.prototype.add = function(element, _where) {
+  _where = Number(_where);
+
+  if(isNaN(_where)) {
+    Array.prototype.push.call(this, element);
+  }
+  else {
+    Array.prototype.splice.call(this, _where, 0, element);
+  }
 };
 
 
@@ -328,6 +335,25 @@ function match (conditions) {
     return true;
   };
 }
+
+
+/* Aliases for imitating an array
+============================================================================= */
+
+List.prototype.push = function() {
+  this.merge(arguments);
+};
+
+List.prototype.unshift = function() {
+  var i, element;
+
+  // Add each element to the beginning, backwards
+  for(i = arguments.length; i--;) {
+    element = arguments[i];
+    this.add(element, 0);
+  }
+};
+
 },{"./utils":4}],3:[function(require,module,exports){
 "use strict";
 
@@ -426,9 +452,9 @@ Bucket = exports = module.exports = function (unique) {
 Bucket.prototype = new List();
 Bucket.prototype.constructor = Bucket;
 
-Bucket.prototype.add = function(element) {
+Bucket.prototype.add = function(element, _where) {
   if(!this.length || !this.unique) {
-    this.push(element);
+    List.prototype.add.call(this, element, _where);
   }
 };
 
