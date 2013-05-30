@@ -12,7 +12,8 @@ typeof window !== 'undefined' && (window.Reol = module.exports);
 "use strict";
 
 var List = require('./List'),
-    Index = require('./Index');
+    Index = require('./Index'),
+    extend = require('./utils').extend;
 
 /**
  * Reol
@@ -28,15 +29,13 @@ var List = require('./List'),
 function Reol (fields) {
   var field;
 
-  List.call(this);
-
   this.index = {};
   this.indexes = {};
 
   // Define indexes
   for(field in fields) {
-    this.index[field] = new Index(field, fields[field]);
     this.indexes[field] = fields[field];
+    this.index[field] = new Index(extend(fields[field], { index: field }));
   }
 
   return this;
@@ -158,7 +157,29 @@ Reol.prototype.findInIndex = function (key, value) {
 
 module.exports = Reol;
 
-},{"./List":2,"./Index":3}],2:[function(require,module,exports){
+},{"./List":2,"./Index":3,"./utils":4}],4:[function(require,module,exports){
+"use strict";
+
+/**
+ * utils
+ *
+ * Just some handy helpers
+ */
+
+exports.extend = function (target) {
+  var sources = [].slice.call(arguments),
+      source, prop;
+
+  while(!!(source = sources.shift())) {
+    for(prop in source) {
+      target[prop] = source[prop];
+    }
+  }
+
+  return target;
+};
+
+},{}],2:[function(require,module,exports){
 "use strict";
 
 var utils = require('./utils'),
@@ -171,8 +192,8 @@ var utils = require('./utils'),
  * methods.
  */
 
-exports = module.exports = List = function (options) {
-  utils.extend(this, options);  
+exports = module.exports = List = function (options, defaults) {
+  utils.extend(this, defaults, options);  
 };
 
 
@@ -422,8 +443,8 @@ var List = require('./List'),
  * Class for storing objects in a hash where the property is a certain key of
  * each object. 
  *
- * @param index (String) Property to index
  * @param [options] (Object) Property to index
+ *  @param index (String) Property to index
  *  @param unique (Boolean) If true, elements will be added only if the indexed
  *    property has not been indexed already
  *  @param sparse (Boolean) If true, undefined values will not be added (note
@@ -431,13 +452,14 @@ var List = require('./List'),
  * @return (Object) this
  */
 
-Index = exports = module.exports = function (index, options) {
-  this.elements = {};
-  this.index = index;
+Index = exports = module.exports = function (options) {
+  List.call(this, options, {
+    index: '',
+    unique: false,
+    sparse: false
+  });
 
-  options = options || {};
-  this.unique = options.unique || false;
-  this.sparse = options.sparse || false;
+  this.elements = {};
 
   return this;
 };
@@ -469,7 +491,7 @@ Index.prototype.add = function(element) {
   bucket = elements[value];
 
   if(!bucket) {
-    elements[value] = bucket = new Bucket(this.unique);
+    elements[value] = bucket = new Bucket({ unique: this.unique });
   }
 
   bucket.add(element);
@@ -482,29 +504,7 @@ Index.prototype.find = function(value) {
   return this.elements[value];
 };
 
-},{"./List":2,"./Bucket":5}],4:[function(require,module,exports){
-"use strict";
-
-/**
- * utils
- *
- * Just some handy helpers
- */
-
-exports.extend = function (target) {
-  var sources = [].slice.call(arguments),
-      source, prop;
-
-  while(!!(source = sources.shift())) {
-    for(prop in source) {
-      target[prop] = source[prop];
-    }
-  }
-
-  return target;
-};
-
-},{}],5:[function(require,module,exports){
+},{"./List":2,"./Bucket":5}],5:[function(require,module,exports){
 "use strict";
 
 var List = require('./List'),
@@ -517,8 +517,10 @@ var List = require('./List'),
  */
 
 
-Bucket = exports = module.exports = function (unique) {
-  this.unique = unique;
+Bucket = exports = module.exports = function (options) {
+  List.call(this, options, {
+    unique: false
+  });
 };
 
 Bucket.prototype = new List();
