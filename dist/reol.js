@@ -172,7 +172,9 @@ exports.extend = function (target) {
 
   while(!!(source = sources.shift())) {
     for(prop in source) {
-      target[prop] = source[prop];
+      if(source.hasOwnProperty(prop)) {
+        target[prop] = source[prop];
+      }
     }
   }
 
