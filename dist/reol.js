@@ -13,6 +13,7 @@ typeof window !== 'undefined' && (window.Reol = module.exports);
 
 var List = require('./List'),
     Index = require('./Index'),
+    Bucket = require('./Bucket'),
     extend = require('./utils').extend;
 
 /**
@@ -41,8 +42,10 @@ function Reol (fields) {
   return this;
 }
 
-// Expose List, just to be nice
+// Expose helper classes, just to be nice
 Reol.List = List;
+Reol.Bucket = Bucket;
+Reol.Index = Index;
 
 
 /* Public methods
@@ -155,9 +158,24 @@ Reol.prototype.findInIndex = function (key, value) {
 };
 
 
+/**
+ * .clone()
+ *
+ * Modification of List.clone() since Reol is a bit special. Creates a new instance
+ *
+ * @return (Reol) The new instance
+ */
+
+Reol.prototype.clone = function() {
+  var result = new this.constructor(this.indexes);
+  result.merge(this);
+  return result;
+};
+
+
 module.exports = Reol;
 
-},{"./List":2,"./Index":3,"./utils":4}],4:[function(require,module,exports){
+},{"./List":2,"./Index":3,"./Bucket":4,"./utils":5}],5:[function(require,module,exports){
 "use strict";
 
 /**
@@ -222,6 +240,7 @@ List.findByPath = function (element, path) {
 ============================================================================= */
 
 List.prototype = [];
+List.prototype.constructor = List;
 
 /**
  * .add(Object)
@@ -299,6 +318,25 @@ List.prototype.findInList = function(key, value, one) {
 
 List.prototype.toArray = function() {
   return [].slice.call(this);
+};
+
+
+/**
+ * .clone()
+ *
+ * Make a clone of the object, preserving the instance's settings but dropping
+ * relations to any parent.
+ *
+ * @return (List) The new instance
+ */
+
+List.prototype.clone = function() {
+  var result = new this.constructor(this);
+
+  delete result.parent;
+  result.merge(this);
+
+  return result;
 };
 
 
@@ -431,7 +469,7 @@ List.prototype.concat = function() {
   return result;
 };
 
-},{"./utils":4}],3:[function(require,module,exports){
+},{"./utils":5}],3:[function(require,module,exports){
 "use strict";
 
 var List = require('./List'),
@@ -506,7 +544,7 @@ Index.prototype.find = function(value) {
   return this.elements[value];
 };
 
-},{"./List":2,"./Bucket":5}],5:[function(require,module,exports){
+},{"./List":2,"./Bucket":4}],4:[function(require,module,exports){
 "use strict";
 
 var List = require('./List'),

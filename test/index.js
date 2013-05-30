@@ -129,6 +129,33 @@ describe('Basic tests', function () {
       expect(test1[i]).to.equal(test2[i]);
     }
   });
+
+  it('.clone() Reol', function () {
+    var test = heap.clone();
+
+    test.should.not.equal(heap);
+    test.length.should.equal(heap.length);
+    test.should.be.instanceof(Reol);
+  });
+
+  it('.clone() Bucket', function () {
+    var beforeClone = heap.find({ label1: 'test' }),
+        test = beforeClone.clone();
+
+    test.should.not.equal(beforeClone);
+    test.length.should.equal(beforeClone.length);
+    test.should.be.instanceof(Reol.Bucket);
+    test.unique.should.equal(beforeClone.unique);
+  });
+
+  it('.clone() List', function () {
+    var beforeClone = heap.find({ label1: 'test' }).filter({}),
+        test = beforeClone.clone();
+
+    test.should.not.equal(beforeClone);
+    test.length.should.equal(beforeClone.length);
+    test.should.be.instanceof(Reol.List);
+  });
 });
 
 describe('findByPath tests', function () {
