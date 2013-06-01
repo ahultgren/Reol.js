@@ -121,8 +121,6 @@ Reol.prototype.find = function(conditions, one) {
     result = this.findInList(key, conditions[key], one);
   }
 
-  result = !result && [] || result.length !== undefined && result || [result];
-
   return result;
 };
 
@@ -292,7 +290,7 @@ List.prototype.merge = function(elements) {
  */
 
 List.prototype.findInList = function(key, value, one) {
-  var i, l, result = [], list = this;
+  var i, l, result = new List({ parent: this }), list = this;
 
   for(i = 0, l = list.length; i < l; i++) {
     if(list[i][key] === value) {
@@ -541,7 +539,7 @@ Index.prototype.add = function(element) {
 
 
 Index.prototype.find = function(value) {
-  return this.elements[value];
+  return this.elements[value] || new List({ parent: this });
 };
 
 },{"./List":2,"./Bucket":4}],4:[function(require,module,exports){

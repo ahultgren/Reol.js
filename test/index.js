@@ -36,15 +36,31 @@ describe('Basic tests', function () {
   });
 
   it('Things are found', function () {
-    heap.find({ label1: 'test' }).should.have.property(0).and.equal(testObj);
+    var test = heap.find({ label1: 'test' });
+
+    test.should.have.property(0).and.equal(testObj);
+    test.should.be.instanceof(Reol.List);
   });
 
   it('Non-exisiting things are not found', function () {
-    heap.find({ label1: 'meow' }).should.be.empty;
+    var test = heap.find({ label1: 'doesnt exist' });
+
+    test.should.be.empty;
+    test.should.be.instanceof(Reol.List);
   });
 
   it('Querying on non-index fields', function () {
-    heap.find({ unIndexedField: 'meow' }).should.have.property(0).and.equal(testObj);
+    var test = heap.find({ unIndexedField: 'meow' });
+
+    test.should.have.property(0).and.equal(testObj);
+    test.should.be.instanceof(Reol.List);
+  });
+
+  it('Non-exisiting things on non-indexed fields', function () {
+    var test = heap.find({ unIndexedField: 'doesnt exist' });
+
+    test.should.be.empty;
+    test.should.be.instanceof(Reol.List);
   });
 
   it('Deep indexing', function () {
