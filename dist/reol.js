@@ -14,7 +14,7 @@ typeof window !== 'undefined' && (window.Reol = module.exports);
 var List = require('./List'),
     Index = require('./Index'),
     Bucket = require('./Bucket'),
-    extend = require('./utils').extend;
+    extend = List.extend;
 
 /**
  * Reol
@@ -31,11 +31,10 @@ function Reol (fields) {
   var field;
 
   this.index = {};
-  this.indexes = {};
+  this.fields = fields;
 
   // Define indexes
   for(field in fields) {
-    this.indexes[field] = fields[field];
     this.index[field] = new Index(extend(fields[field], { index: field }));
   }
 
@@ -76,7 +75,7 @@ Reol.prototype.add = function(element, _where) {
   List.prototype.add.call(this, element, _where);
 
   // Add to indexes
-  for(field in this.indexes) {
+  for(field in this.index) {
     this.index[field].add(element);
   }
 
@@ -165,7 +164,7 @@ Reol.prototype.findInIndex = function (key, value) {
  */
 
 Reol.prototype.clone = function() {
-  var result = new this.constructor(this.indexes);
+  var result = new this.constructor(this.fields);
   result.merge(this);
   return result;
 };
@@ -173,35 +172,10 @@ Reol.prototype.clone = function() {
 
 module.exports = Reol;
 
-},{"./List":2,"./Index":3,"./Bucket":4,"./utils":5}],5:[function(require,module,exports){
+},{"./List":2,"./Index":3,"./Bucket":4}],2:[function(require,module,exports){
 "use strict";
 
-/**
- * utils
- *
- * Just some handy helpers
- */
-
-exports.extend = function (target) {
-  var sources = [].slice.call(arguments),
-      source, prop;
-
-  while(!!(source = sources.shift())) {
-    for(prop in source) {
-      if(source.hasOwnProperty(prop)) {
-        target[prop] = source[prop];
-      }
-    }
-  }
-
-  return target;
-};
-
-},{}],2:[function(require,module,exports){
-"use strict";
-
-var utils = require('./utils'),
-    List;
+var List;
 
 /**
  * List
@@ -211,7 +185,8 @@ var utils = require('./utils'),
  */
 
 exports = module.exports = List = function (options, defaults) {
-  utils.extend(this, defaults, options);  
+  this.options = {};
+  List.extend(this.options, defaults, options);
 };
 
 
@@ -231,6 +206,24 @@ List.findByPath = function (element, path) {
   }
   
   return _element;
+};
+
+// Shallow copy of objects
+List.extend = function (target) {
+  var sources = [].slice.call(arguments, 1),
+      source, prop;
+
+  while(sources.length > 0) {
+    source = sources.shift();
+
+    for(prop in source) {
+      if(source.hasOwnProperty(prop)) {
+        target[prop] = source[prop];
+      }
+    }
+  }
+
+  return target;
 };
 
 
@@ -329,7 +322,7 @@ List.prototype.toArray = function() {
  */
 
 List.prototype.clone = function() {
-  var result = new this.constructor(this);
+  var result = new this.constructor(this.options);
 
   delete result.parent;
   result.merge(this);
@@ -467,7 +460,7 @@ List.prototype.concat = function() {
   return result;
 };
 
-},{"./utils":5}],3:[function(require,module,exports){
+},{}],3:[function(require,module,exports){
 "use strict";
 
 var List = require('./List'),
@@ -509,7 +502,7 @@ Index = exports = module.exports = function (options) {
 Index.prototype.add = function(element) {
   var i, l,
       elements = this.elements,
-      index = this.index,
+      index = this.options.index,
       value,
       bucket;
 
@@ -522,14 +515,14 @@ Index.prototype.add = function(element) {
   }
 
   // If sparse and undefined
-  if(value === undefined && this.sparse === true) {
+  if(value === undefined && this.options.sparse === true) {
     return false;
   }
 
   bucket = elements[value];
 
   if(!bucket) {
-    elements[value] = bucket = new Bucket({ unique: this.unique });
+    elements[value] = bucket = new Bucket({ unique: this.options.unique });
   }
 
   bucket.add(element);
@@ -539,7 +532,7 @@ Index.prototype.add = function(element) {
 
 
 Index.prototype.find = function(value) {
-  return this.elements[value] || new List({ parent: this });
+  return this.elements[value] || new List({ unique: this.options.unique });
 };
 
 },{"./List":2,"./Bucket":4}],4:[function(require,module,exports){
@@ -565,7 +558,7 @@ Bucket.prototype = new List();
 Bucket.prototype.constructor = Bucket;
 
 Bucket.prototype.add = function(element, _where) {
-  if(!this.length || !this.unique) {
+  if(!this.length || !this.options.unique) {
     List.prototype.add.call(this, element, _where);
   }
 };

@@ -45,7 +45,7 @@ describe('Basic tests', function () {
   it('Non-exisiting things are not found', function () {
     var test = heap.find({ label1: 'doesnt exist' });
 
-    test.should.be.empty;
+    test.length.should.equal(0);
     test.should.be.instanceof(Reol.List);
   });
 
@@ -59,7 +59,7 @@ describe('Basic tests', function () {
   it('Non-exisiting things on non-indexed fields', function () {
     var test = heap.find({ unIndexedField: 'doesnt exist' });
 
-    test.should.be.empty;
+    test.length.should.equal(0);
     test.should.be.instanceof(Reol.List);
   });
 
@@ -161,7 +161,7 @@ describe('Basic tests', function () {
     test.should.not.equal(beforeClone);
     test.length.should.equal(beforeClone.length);
     test.should.be.instanceof(Reol.Bucket);
-    test.unique.should.equal(beforeClone.unique);
+    test.options.unique.should.equal(beforeClone.options.unique);
   });
 
   it('.clone() List', function () {
