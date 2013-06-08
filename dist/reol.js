@@ -493,7 +493,7 @@ function extract (property) {
 ============================================================================= */
 
 List.prototype.push = function() {
-  this.merge(arguments);
+  return this.merge(arguments);
 };
 
 List.prototype.unshift = function() {
@@ -504,6 +504,8 @@ List.prototype.unshift = function() {
     element = arguments[i];
     this.add(element, 0);
   }
+
+  return this;
 };
 
 List.prototype.concat = function() {
@@ -661,7 +663,7 @@ Index.prototype.remove = function(elements, _fromParent) {
   return this;
 };
 
-},{"./List":2,"./Bucket":4}],4:[function(require,module,exports){
+},{"./Bucket":4,"./List":2}],4:[function(require,module,exports){
 "use strict";
 
 var List = require('./List'),
