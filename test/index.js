@@ -36,15 +36,31 @@ describe('Basic tests', function () {
   });
 
   it('Things are found', function () {
-    heap.find({ label1: 'test' }).should.have.property(0).and.equal(testObj);
+    var test = heap.find({ label1: 'test' });
+
+    test.should.have.property(0).and.equal(testObj);
+    test.should.be.instanceof(Reol.List);
   });
 
   it('Non-exisiting things are not found', function () {
-    heap.find({ label1: 'meow' }).should.be.empty;
+    var test = heap.find({ label1: 'doesnt exist' });
+
+    test.length.should.equal(0);
+    test.should.be.instanceof(Reol.List);
   });
 
   it('Querying on non-index fields', function () {
-    heap.find({ unIndexedField: 'meow' }).should.have.property(0).and.equal(testObj);
+    var test = heap.find({ unIndexedField: 'meow' });
+
+    test.should.have.property(0).and.equal(testObj);
+    test.should.be.instanceof(Reol.List);
+  });
+
+  it('Non-exisiting things on non-indexed fields', function () {
+    var test = heap.find({ unIndexedField: 'doesnt exist' });
+
+    test.length.should.equal(0);
+    test.should.be.instanceof(Reol.List);
   });
 
   it('Deep indexing', function () {
@@ -145,7 +161,7 @@ describe('Basic tests', function () {
     test.should.not.equal(beforeClone);
     test.length.should.equal(beforeClone.length);
     test.should.be.instanceof(Reol.Bucket);
-    test.unique.should.equal(beforeClone.unique);
+    test.options.unique.should.equal(beforeClone.options.unique);
   });
 
   it('.clone() List', function () {
@@ -155,6 +171,137 @@ describe('Basic tests', function () {
     test.should.not.equal(beforeClone);
     test.length.should.equal(beforeClone.length);
     test.should.be.instanceof(Reol.List);
+  });
+});
+
+describe('.remove() stuff', function () {
+  before(function () {
+    heap = new Reol({
+      remove: {},
+      test: {}
+    });
+    heap.add({
+      remove: 'test2',
+      test: 1
+    }).add({
+      remove: 'test2',
+      test: 2
+    }).add({
+      remove: 'test2',
+      test: 3
+    }).add({
+      remove: 'test2',
+      test: 3
+    }).add({
+      remove: 'test2',
+      test: 4
+    }).add({
+      remove: 'test2',
+      test: 4
+    });
+  });
+
+  it('from a list without source', function () {
+    var heapBefore = heap.length,
+        test = heap.find({ remove: 'test2' }).filter({ test: 1 }).clone();
+
+    test.remove();
+    test.length.should.equal(0);
+    heap.length.should.equal(heapBefore);
+  });
+
+  it('from a list with source', function () {
+    var heapBefore = heap.length,
+        test = heap.find({ remove: 'test2' }).filter({ test: 1 });
+
+    test.remove();
+    test.length.should.equal(0);
+    heap.length.should.equal(heapBefore - 1);
+    heap.find({ test: 1 }).length.should.equal(0);
+  });
+
+  it('from a bucket with source', function () {
+    var heapBefore = heap.length,
+        test = heap.find({ test: 2 });
+
+    test.remove();
+    test.length.should.equal(0);
+    heap.length.should.equal(heapBefore - 1);
+    heap.find({ test: 2 }).length.should.equal(0);
+  });
+
+  it('with multiple matches', function () {
+    var heapBefore = heap.length,
+        test = heap.find({ test: 3 });
+
+    test.remove();
+    test.length.should.equal(0);
+    heap.length.should.equal(heapBefore - 2);
+    heap.find({ test: 3 }).length.should.equal(0);
+  });
+
+  it('with empty list', function () {
+    var heapBefore = heap.length,
+        test = heap.find({ test: 9000 });
+
+    test.remove();
+    test.length.should.equal(0);
+    heap.length.should.equal(heapBefore);
+  });
+
+  it('everything', function () {
+    heap.remove();
+    heap.length.should.equal(0);
+    expect(heap.index.remove.elements.test2).to.be.undefined;
+    expect(heap.index.test.elements[4]).to.be.undefined;
+  });
+});
+
+describe('Destructive array look-alike methods:', function () {
+  before(function () {
+    heap = new Reol();
+
+    heap.add({ test: 1 })
+      .add({ test: 2 })
+      .add({ test: 3 })
+      .add({ test: 4 })
+      .add({ test: 5 })
+      .add({ test: 6 })
+      .add({ test: 7 });
+  });
+
+  it('.pop()', function () {
+    var length = heap.length,
+        before = heap[length - 1],
+        test = heap.pop();
+
+    heap.length.should.equal(length - 1);
+    test.should.equal(before);
+  });
+
+  it('.shift()', function () {
+    var before = heap[0],
+        length = heap.length,
+        test = heap.shift();
+
+    heap.length.should.equal(length - 1);
+    heap[0].should.not.equal(before);
+    test.should.equal(before);
+  });
+
+  it('.splice()', function () {
+    var expected = [heap[2], heap[3]],
+        length = heap.length,
+        insert = { test: 1337 },
+        test = heap.splice(2, 2),
+        i;
+
+    heap.length.should.equal(length - 2);
+    test.length.should.equal(expected.length);
+
+    for(i = test.length; i--;) {
+      test[i].should.equal(expected[i]);
+    }
   });
 });
 

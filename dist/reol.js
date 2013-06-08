@@ -14,7 +14,7 @@ typeof window !== 'undefined' && (window.Reol = module.exports);
 var List = require('./List'),
     Index = require('./Index'),
     Bucket = require('./Bucket'),
-    extend = require('./utils').extend;
+    extend = List.extend;
 
 /**
  * Reol
@@ -31,12 +31,11 @@ function Reol (fields) {
   var field;
 
   this.index = {};
-  this.indexes = {};
+  this.fields = fields;
 
   // Define indexes
   for(field in fields) {
-    this.indexes[field] = fields[field];
-    this.index[field] = new Index(extend(fields[field], { index: field }));
+    this.index[field] = new Index(extend(fields[field], { index: field, source: this }));
   }
 
   return this;
@@ -76,7 +75,7 @@ Reol.prototype.add = function(element, _where) {
   List.prototype.add.call(this, element, _where);
 
   // Add to indexes
-  for(field in this.indexes) {
+  for(field in this.index) {
     this.index[field].add(element);
   }
 
@@ -120,8 +119,6 @@ Reol.prototype.find = function(conditions, one) {
   else {
     result = this.findInList(key, conditions[key], one);
   }
-
-  result = !result && [] || result.length !== undefined && result || [result];
 
   return result;
 };
@@ -167,43 +164,37 @@ Reol.prototype.findInIndex = function (key, value) {
  */
 
 Reol.prototype.clone = function() {
-  var result = new this.constructor(this.indexes);
+  var result = new this.constructor(this.fields);
   result.merge(this);
   return result;
 };
 
 
-module.exports = Reol;
-
-},{"./List":2,"./Index":3,"./Bucket":4,"./utils":5}],5:[function(require,module,exports){
-"use strict";
-
 /**
- * utils
+ * .remove()
  *
- * Just some handy helpers
+ * Extends List.remove() to propagate to indexes
  */
 
-exports.extend = function (target) {
-  var sources = [].slice.call(arguments),
-      source, prop;
+Reol.prototype.remove = function(elements) {
+  var i;
 
-  while(!!(source = sources.shift())) {
-    for(prop in source) {
-      if(source.hasOwnProperty(prop)) {
-        target[prop] = source[prop];
-      }
-    }
+  elements = elements || this.clone();
+
+  List.prototype.remove.call(this, elements, true);
+
+  for(i in this.index) {
+    this.index[i].remove(elements, true);
   }
-
-  return target;
 };
 
-},{}],2:[function(require,module,exports){
+
+module.exports = Reol;
+
+},{"./List":2,"./Index":3,"./Bucket":4}],2:[function(require,module,exports){
 "use strict";
 
-var utils = require('./utils'),
-    List;
+var List;
 
 /**
  * List
@@ -212,8 +203,9 @@ var utils = require('./utils'),
  * methods.
  */
 
-exports = module.exports = List = function (options, defaults) {
-  utils.extend(this, defaults, options);  
+exports = module.exports = List = function List (options, defaults) {
+  this.options = {};
+  List.extend(this.options, defaults, options);
 };
 
 
@@ -233,6 +225,24 @@ List.findByPath = function (element, path) {
   }
   
   return _element;
+};
+
+// Shallow copy of objects
+List.extend = function (target) {
+  var sources = [].slice.call(arguments, 1),
+      source, prop;
+
+  while(sources.length > 0) {
+    source = sources.shift();
+
+    for(prop in source) {
+      if(source.hasOwnProperty(prop)) {
+        target[prop] = source[prop];
+      }
+    }
+  }
+
+  return target;
 };
 
 
@@ -292,7 +302,7 @@ List.prototype.merge = function(elements) {
  */
 
 List.prototype.findInList = function(key, value, one) {
-  var i, l, result = [], list = this;
+  var i, l, result = new List({ source: this.options.source }), list = this;
 
   for(i = 0, l = list.length; i < l; i++) {
     if(list[i][key] === value) {
@@ -325,18 +335,59 @@ List.prototype.toArray = function() {
  * .clone()
  *
  * Make a clone of the object, preserving the instance's settings but dropping
- * relations to any parent.
+ * relations to any source.
  *
  * @return (List) The new instance
  */
 
 List.prototype.clone = function() {
-  var result = new this.constructor(this);
+  var result = new this.constructor(this.options);
 
-  delete result.parent;
+  delete result.options.source;
   result.merge(this);
 
   return result;
+};
+
+
+/**
+ * .remove()
+ *
+ * Remove elements from the list. If the list has a source the remove command
+ * will be called on the source, and remove will be called
+ * on that list with the supplied element as argument. If no element is supplied
+ * all elements in the list will be removed. Use .clone() to not remove elements
+ * from the source.
+ *
+ * @param [elements] (Object) Element(s) to remove
+ * @return (Object) The same list it was called on
+ */
+
+List.prototype.remove = function(elements, _fromParent) {
+  var i, elementIndex;
+
+  elements = elements || this.clone();
+
+  if(!_fromParent && this.options.source) {
+    this.options.source.remove(elements);
+  }
+
+  if(elements === this) {
+    // Just remove everything
+    [].splice.call(this, 0);
+  }
+  else {
+    // Loop through the hard way
+    for(i = elements.length; i--;) {
+      elementIndex = this.indexOf(elements[i]);
+
+      if(this[elementIndex]) {
+        [].splice.call(this, elementIndex, 1);
+      }
+    }
+  }
+
+  return this;
 };
 
 
@@ -350,7 +401,7 @@ List.prototype.clone = function() {
  */
 
 List.prototype.filter = function(conditions) {
-  var result = new List(),
+  var result = new List({ source: this.options.source }),
       matcher = typeof conditions === 'function' ? conditions : match(conditions),
       i, l;
 
@@ -469,7 +520,47 @@ List.prototype.concat = function() {
   return result;
 };
 
-},{"./utils":5}],3:[function(require,module,exports){
+List.prototype.pop = function() {
+  var result = this[this.length - 1];
+
+  this.remove([result]);
+  return result;
+};
+
+List.prototype.shift = function() {
+  var result = this[0];
+
+  this.remove([result]);
+  return result;
+};
+
+List.prototype.splice = function(index, howMany, replace) {
+  var result = new List(),
+      length = arguments.length,
+      i;
+
+  // Prepare replacements
+  replace = replace ? [replace] : [];
+
+  if(length > 3) {
+    replace = Array.prototype.slice.call(arguments, 2);
+  }
+
+  // Get elements
+  result.merge(Array.prototype.slice.call(this, index, index + howMany));
+
+  // Remove elements
+  this.remove(result);
+
+  // Add replacements one at a time, backwards
+  for(i = replace.length; i--;) {
+    this.add(replace[i], index);
+  }
+
+  return result;
+};
+
+},{}],3:[function(require,module,exports){
 "use strict";
 
 var List = require('./List'),
@@ -492,7 +583,7 @@ var List = require('./List'),
  * @return (Object) this
  */
 
-Index = exports = module.exports = function (options) {
+Index = exports = module.exports = function Index (options) {
   List.call(this, options, {
     index: '',
     unique: false,
@@ -511,7 +602,7 @@ Index = exports = module.exports = function (options) {
 Index.prototype.add = function(element) {
   var i, l,
       elements = this.elements,
-      index = this.index,
+      index = this.options.index,
       value,
       bucket;
 
@@ -524,14 +615,14 @@ Index.prototype.add = function(element) {
   }
 
   // If sparse and undefined
-  if(value === undefined && this.sparse === true) {
+  if(value === undefined && this.options.sparse === true) {
     return false;
   }
 
   bucket = elements[value];
 
   if(!bucket) {
-    elements[value] = bucket = new Bucket({ unique: this.unique });
+    elements[value] = bucket = new Bucket({ unique: this.options.unique, source: this.options.source });
   }
 
   bucket.add(element);
@@ -541,7 +632,33 @@ Index.prototype.add = function(element) {
 
 
 Index.prototype.find = function(value) {
-  return this.elements[value];
+  return this.elements[value] || new List({ unique: this.options.unique, source: this.options.source });
+};
+
+Index.prototype.remove = function(elements, _fromParent) {
+  var i, bucket, bucketIndex;
+
+  // Assuming an index always has a source
+  if(!_fromParent) {
+    this.options.source.remove(elements);
+    return this;
+  }
+
+  // Assume elements is always specified, since it will never be called directly
+  for(i = elements.length; i--;) {
+    bucketIndex = elements[i][this.options.index];
+    bucket = this.elements[bucketIndex];
+
+    if(bucket && bucket.length) {
+      bucket.remove(elements, true);
+
+      if(!bucket.length) {
+        delete this.elements[bucketIndex];
+      }
+    }
+  }
+
+  return this;
 };
 
 },{"./List":2,"./Bucket":4}],4:[function(require,module,exports){
@@ -557,7 +674,7 @@ var List = require('./List'),
  */
 
 
-Bucket = exports = module.exports = function (options) {
+Bucket = exports = module.exports = function Bucket (options) {
   List.call(this, options, {
     unique: false
   });
@@ -567,7 +684,7 @@ Bucket.prototype = new List();
 Bucket.prototype.constructor = Bucket;
 
 Bucket.prototype.add = function(element, _where) {
-  if(!this.length || !this.unique) {
+  if(!this.length || !this.options.unique) {
     List.prototype.add.call(this, element, _where);
   }
 };
