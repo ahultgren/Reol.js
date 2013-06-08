@@ -35,7 +35,7 @@ function Reol (fields) {
 
   // Define indexes
   for(field in fields) {
-    this.index[field] = new Index(extend(fields[field], { index: field }));
+    this.index[field] = new Index(extend(fields[field], { index: field, source: this }));
   }
 
   return this;
@@ -170,6 +170,25 @@ Reol.prototype.clone = function() {
 };
 
 
+/**
+ * .remove()
+ *
+ * Extends List.remove() to propagate to indexes
+ */
+
+Reol.prototype.remove = function(elements) {
+  var i;
+
+  elements = elements || this.clone();
+
+  List.prototype.remove.call(this, elements, true);
+
+  for(i in this.index) {
+    this.index[i].remove(elements, true);
+  }
+};
+
+
 module.exports = Reol;
 
 },{"./List":2,"./Index":3,"./Bucket":4}],2:[function(require,module,exports){
@@ -184,7 +203,7 @@ var List;
  * methods.
  */
 
-exports = module.exports = List = function (options, defaults) {
+exports = module.exports = List = function List (options, defaults) {
   this.options = {};
   List.extend(this.options, defaults, options);
 };
@@ -283,7 +302,7 @@ List.prototype.merge = function(elements) {
  */
 
 List.prototype.findInList = function(key, value, one) {
-  var i, l, result = new List({ parent: this }), list = this;
+  var i, l, result = new List({ source: this.options.source }), list = this;
 
   for(i = 0, l = list.length; i < l; i++) {
     if(list[i][key] === value) {
@@ -316,7 +335,7 @@ List.prototype.toArray = function() {
  * .clone()
  *
  * Make a clone of the object, preserving the instance's settings but dropping
- * relations to any parent.
+ * relations to any source.
  *
  * @return (List) The new instance
  */
@@ -324,10 +343,51 @@ List.prototype.toArray = function() {
 List.prototype.clone = function() {
   var result = new this.constructor(this.options);
 
-  delete result.parent;
+  delete result.options.source;
   result.merge(this);
 
   return result;
+};
+
+
+/**
+ * .remove()
+ *
+ * Remove elements from the list. If the list has a source the remove command
+ * will be called on the source, and remove will be called
+ * on that list with the supplied element as argument. If no element is supplied
+ * all elements in the list will be removed. Use .clone() to not remove elements
+ * from the source.
+ *
+ * @param [elements] (Object) Element(s) to remove
+ * @return (Object) The same list it was called on
+ */
+
+List.prototype.remove = function(elements, _fromParent) {
+  var i, elementIndex;
+
+  elements = elements || this.clone();
+
+  if(!_fromParent && this.options.source) {
+    this.options.source.remove(elements);
+  }
+
+  if(elements === this) {
+    // Just remove everything
+    [].splice.call(this, 0);
+  }
+  else {
+    // Loop through the hard way
+    for(i = elements.length; i--;) {
+      elementIndex = this.indexOf(elements[i]);
+
+      if(this[elementIndex]) {
+        [].splice.call(this, elementIndex, 1);
+      }
+    }
+  }
+
+  return this;
 };
 
 
@@ -341,7 +401,7 @@ List.prototype.clone = function() {
  */
 
 List.prototype.filter = function(conditions) {
-  var result = new List(),
+  var result = new List({ source: this.options.source }),
       matcher = typeof conditions === 'function' ? conditions : match(conditions),
       i, l;
 
@@ -483,7 +543,7 @@ var List = require('./List'),
  * @return (Object) this
  */
 
-Index = exports = module.exports = function (options) {
+Index = exports = module.exports = function Index (options) {
   List.call(this, options, {
     index: '',
     unique: false,
@@ -522,7 +582,7 @@ Index.prototype.add = function(element) {
   bucket = elements[value];
 
   if(!bucket) {
-    elements[value] = bucket = new Bucket({ unique: this.options.unique });
+    elements[value] = bucket = new Bucket({ unique: this.options.unique, source: this.options.source });
   }
 
   bucket.add(element);
@@ -532,7 +592,33 @@ Index.prototype.add = function(element) {
 
 
 Index.prototype.find = function(value) {
-  return this.elements[value] || new List({ unique: this.options.unique });
+  return this.elements[value] || new List({ unique: this.options.unique, source: this.options.source });
+};
+
+Index.prototype.remove = function(elements, _fromParent) {
+  var i, bucket, bucketIndex;
+
+  // Assuming an index always has a source
+  if(!_fromParent) {
+    this.options.source.remove(elements);
+    return this;
+  }
+
+  // Assume elements is always specified, since it will never be called directly
+  for(i = elements.length; i--;) {
+    bucketIndex = elements[i][this.options.index];
+    bucket = this.elements[bucketIndex];
+
+    if(bucket && bucket.length) {
+      bucket.remove(elements, true);
+
+      if(!bucket.length) {
+        delete this.elements[bucketIndex];
+      }
+    }
+  }
+
+  return this;
 };
 
 },{"./List":2,"./Bucket":4}],4:[function(require,module,exports){
@@ -548,7 +634,7 @@ var List = require('./List'),
  */
 
 
-Bucket = exports = module.exports = function (options) {
+Bucket = exports = module.exports = function Bucket (options) {
   List.call(this, options, {
     unique: false
   });
