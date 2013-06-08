@@ -174,6 +174,89 @@ describe('Basic tests', function () {
   });
 });
 
+describe('.remove() stuff', function () {
+  before(function () {
+    heap = new Reol({
+      remove: {},
+      test: {}
+    });
+    heap.add({
+      remove: 'test2',
+      test: 1
+    }).add({
+      remove: 'test2',
+      test: 2
+    }).add({
+      remove: 'test2',
+      test: 3
+    }).add({
+      remove: 'test2',
+      test: 3
+    }).add({
+      remove: 'test2',
+      test: 4
+    }).add({
+      remove: 'test2',
+      test: 4
+    });
+  });
+
+  it('from a list without source', function () {
+    var heapBefore = heap.length,
+        test = heap.find({ remove: 'test2' }).filter({ test: 1 }).clone();
+
+    test.remove();
+    test.length.should.equal(0);
+    heap.length.should.equal(heapBefore);
+  });
+
+  it('from a list with source', function () {
+    var heapBefore = heap.length,
+        test = heap.find({ remove: 'test2' }).filter({ test: 1 });
+
+    test.remove();
+    test.length.should.equal(0);
+    heap.length.should.equal(heapBefore - 1);
+    heap.find({ test: 1 }).length.should.equal(0);
+  });
+
+  it('from a bucket with source', function () {
+    var heapBefore = heap.length,
+        test = heap.find({ test: 2 });
+
+    test.remove();
+    test.length.should.equal(0);
+    heap.length.should.equal(heapBefore - 1);
+    heap.find({ test: 2 }).length.should.equal(0);
+  });
+
+  it('with multiple matches', function () {
+    var heapBefore = heap.length,
+        test = heap.find({ test: 3 });
+
+    test.remove();
+    test.length.should.equal(0);
+    heap.length.should.equal(heapBefore - 2);
+    heap.find({ test: 3 }).length.should.equal(0);
+  });
+
+  it('with empty list', function () {
+    var heapBefore = heap.length,
+        test = heap.find({ test: 9000 });
+
+    test.remove();
+    test.length.should.equal(0);
+    heap.length.should.equal(heapBefore);
+  });
+
+  it('everything', function () {
+    heap.remove();
+    heap.length.should.equal(0);
+    expect(heap.index.remove.elements.test2).to.be.undefined;
+    expect(heap.index.test.elements[4]).to.be.undefined;
+  });
+});
+
 describe('findByPath tests', function () {
   var data = { 
         yep: "first level",
