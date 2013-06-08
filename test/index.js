@@ -257,6 +257,54 @@ describe('.remove() stuff', function () {
   });
 });
 
+describe('Destructive array look-alike methods:', function () {
+  before(function () {
+    heap = new Reol();
+
+    heap.add({ test: 1 })
+      .add({ test: 2 })
+      .add({ test: 3 })
+      .add({ test: 4 })
+      .add({ test: 5 })
+      .add({ test: 6 })
+      .add({ test: 7 });
+  });
+
+  it('.pop()', function () {
+    var length = heap.length,
+        before = heap[length - 1],
+        test = heap.pop();
+
+    heap.length.should.equal(length - 1);
+    test.should.equal(before);
+  });
+
+  it('.shift()', function () {
+    var before = heap[0],
+        length = heap.length,
+        test = heap.shift();
+
+    heap.length.should.equal(length - 1);
+    heap[0].should.not.equal(before);
+    test.should.equal(before);
+  });
+
+  it('.splice()', function () {
+    var expected = [heap[2], heap[3]],
+        length = heap.length,
+        insert = { test: 1337 },
+        test = heap.splice(2, 2),
+        i;
+
+    heap.length.should.equal(length - 2);
+    test.length.should.equal(expected.length);
+
+    for(i = test.length; i--;) {
+      test[i].should.equal(expected[i]);
+    }
+  });
+});
+
 describe('findByPath tests', function () {
   var data = { 
         yep: "first level",
