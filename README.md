@@ -131,6 +131,44 @@ list.find({ test: 'meow' }).filter(function (element) {
 });
 ```
 
+You can copy lists using clone
+
+```javascript
+var newList = list.clone();
+var evenNewer = newList.find({ test: 'test' }).clone();
+```
+
+Removing elements working since 0.3.
+
+```javascript
+// First find or filter out the unwanted elements, the .remove() them
+list.find({ test: 'meow' }).remove();
+
+// Or supply a collection of elements
+list.remove(list.find({ test: 'meow' }));
+
+// Note that this removes the element(s) from the parent element (eg "list")
+// Create a new instance with .clone() to remove elements from only that set
+list.find({ test: 'meow' }).clone().filter({ more: 'conditions' }).remove();
+```
+
+You can also use the following regular array-methods:
+
+* .push()
+* .unshift()
+* .concat()
+* .pop()
+* .shift()
+* .splice()
+* .filter()
+* .map()
+
+These are reimplemented as close to the native ones as possible. Accessor
+methods returns the element (or an instance of Reol.List in case of multiple 
+elements) while mutator methods returns itself so it can be chained (unless it's
+supposed to return a result of course). All other methods are left with the 
+native implementation and should work but are not tested.
+
 
 ## Todo
 

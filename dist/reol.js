@@ -12,7 +12,9 @@ typeof window !== 'undefined' && (window.Reol = module.exports);
 "use strict";
 
 var List = require('./List'),
-    Index = require('./Index');
+    Index = require('./Index'),
+    Bucket = require('./Bucket'),
+    extend = List.extend;
 
 /**
  * Reol
@@ -28,22 +30,21 @@ var List = require('./List'),
 function Reol (fields) {
   var field;
 
-  List.call(this);
-
   this.index = {};
-  this.indexes = {};
+  this.fields = fields;
 
   // Define indexes
   for(field in fields) {
-    this.index[field] = new Index(field, fields[field]);
-    this.indexes[field] = fields[field];
+    this.index[field] = new Index(extend(fields[field], { index: field, source: this }));
   }
 
   return this;
 }
 
-// Expose List, just to be nice
+// Expose helper classes, just to be nice
 Reol.List = List;
+Reol.Bucket = Bucket;
+Reol.Index = Index;
 
 
 /* Public methods
@@ -60,33 +61,22 @@ Reol.prototype.constructor = Reol;
  * in other indexes and in the list.
  *
  * @param element (Object) Object to be indexed
- * @param [callback] (Function) Optional callback
  * @return (Reol) this
  */
 
-Reol.prototype.add = function(element, callback) {
+Reol.prototype.add = function(element, _where) {
   var err, field;
 
   if(typeof element !== 'object') {
-    err = new Error('Sorry, this class only works with objects.');
-    if(callback) {
-      callback(err);
-    }
-    else {
-      throw err;
-    }
+    throw new Error('Sorry, this class only works with objects.');
   }
 
   // Add to list
-  this.push(element);
+  List.prototype.add.call(this, element, _where);
 
   // Add to indexes
-  for(field in this.indexes) {
+  for(field in this.index) {
     this.index[field].add(element);
-  }
-
-  if(callback) {
-    callback();
   }
 
   return this;
@@ -101,15 +91,12 @@ Reol.prototype.add = function(element, callback) {
  *
  * @param conditions (object) One (1!) condition to match. Multiple conditions will
  *  be supported later.
- * @param [callback] (Function) Optional callback
  * @param [one] (Boolean) If true will only return one element
  * @return (Array|Object|undefined) The found elements
  */
 
-Reol.prototype.find = function(conditions, callback, one) {
+Reol.prototype.find = function(conditions, one) {
   var key, condition, result;
-
-  callback = callback || function(){};
 
   // Extract property name
   for(condition in conditions) {
@@ -121,7 +108,6 @@ Reol.prototype.find = function(conditions, callback, one) {
 
   // Return eveything
   if(!key) {
-    callback(this.toArray());
     return this.toArray();
   }
 
@@ -134,9 +120,6 @@ Reol.prototype.find = function(conditions, callback, one) {
     result = this.findInList(key, conditions[key], one);
   }
 
-  result = !result && [] || result.length !== undefined && result || [result];
-
-  callback(null, result);
   return result;
 };
 
@@ -148,16 +131,11 @@ Reol.prototype.find = function(conditions, callback, one) {
  *
  * @param conditions (Object) One (1!) condition to match. Multiple conditions will
  *  be supported later.
- * @param [callback] (Function) Optional callback
  * @return (Object|undefined) The element found if found
  */
 
-Reol.prototype.findOne = function(conditions, callback) {
-  return this.find(conditions, function (err, result) {
-    if(callback) {
-      callback(err, result[0]);
-    }
-  }, true)[0];
+Reol.prototype.findOne = function(conditions) {
+  return this.find(conditions, true)[0];
 };
 
 
@@ -177,13 +155,46 @@ Reol.prototype.findInIndex = function (key, value) {
 };
 
 
+/**
+ * .clone()
+ *
+ * Modification of List.clone() since Reol is a bit special. Creates a new instance
+ *
+ * @return (Reol) The new instance
+ */
+
+Reol.prototype.clone = function() {
+  var result = new this.constructor(this.fields);
+  result.merge(this);
+  return result;
+};
+
+
+/**
+ * .remove()
+ *
+ * Extends List.remove() to propagate to indexes
+ */
+
+Reol.prototype.remove = function(elements) {
+  var i;
+
+  elements = elements || this.clone();
+
+  List.prototype.remove.call(this, elements, true);
+
+  for(i in this.index) {
+    this.index[i].remove(elements, true);
+  }
+};
+
+
 module.exports = Reol;
 
-},{"./List":2,"./Index":3}],2:[function(require,module,exports){
+},{"./List":2,"./Index":3,"./Bucket":4}],2:[function(require,module,exports){
 "use strict";
 
-var utils = require('./utils'),
-    List;
+var List;
 
 /**
  * List
@@ -192,8 +203,9 @@ var utils = require('./utils'),
  * methods.
  */
 
-exports = module.exports = List = function (options) {
-  utils.extend(this, options);  
+exports = module.exports = List = function List (options, defaults) {
+  this.options = {};
+  List.extend(this.options, defaults, options);
 };
 
 
@@ -215,11 +227,30 @@ List.findByPath = function (element, path) {
   return _element;
 };
 
+// Shallow copy of objects
+List.extend = function (target) {
+  var sources = [].slice.call(arguments, 1),
+      source, prop;
+
+  while(sources.length > 0) {
+    source = sources.shift();
+
+    for(prop in source) {
+      if(source.hasOwnProperty(prop)) {
+        target[prop] = source[prop];
+      }
+    }
+  }
+
+  return target;
+};
+
 
 /* Public methods
 ============================================================================= */
 
 List.prototype = [];
+List.prototype.constructor = List;
 
 /**
  * .add(Object)
@@ -227,8 +258,15 @@ List.prototype = [];
  * Basic add. Most subclasses will overwrite it
  */
 
-List.prototype.add = function(element) {
-  this.push(element);
+List.prototype.add = function(element, _where) {
+  _where = Number(_where);
+
+  if(isNaN(_where)) {
+    Array.prototype.push.call(this, element);
+  }
+  else {
+    Array.prototype.splice.call(this, _where, 0, element);
+  }
 };
 
 
@@ -238,19 +276,14 @@ List.prototype.add = function(element) {
  * Adds all elements in an Array or another instance of List.
  *
  * @param elements (List|Array) Elements to merge
- * @param [callback] (Function) Optional callback
  * @return (Object) this
  */
 
-List.prototype.merge = function(elements, callback) {
+List.prototype.merge = function(elements) {
   var i, l;
 
   for(i = 0, l = elements.length; i < l; i++) {
     this.add(elements[i]);
-  }
-
-  if(callback) {
-    callback();
   }
 
   return this;
@@ -269,7 +302,7 @@ List.prototype.merge = function(elements, callback) {
  */
 
 List.prototype.findInList = function(key, value, one) {
-  var i, l, result = [], list = this;
+  var i, l, result = new List({ source: this.options.source }), list = this;
 
   for(i = 0, l = list.length; i < l; i++) {
     if(list[i][key] === value) {
@@ -299,16 +332,76 @@ List.prototype.toArray = function() {
 
 
 /**
+ * .clone()
+ *
+ * Make a clone of the object, preserving the instance's settings but dropping
+ * relations to any source.
+ *
+ * @return (List) The new instance
+ */
+
+List.prototype.clone = function() {
+  var result = new this.constructor(this.options);
+
+  delete result.options.source;
+  result.merge(this);
+
+  return result;
+};
+
+
+/**
+ * .remove()
+ *
+ * Remove elements from the list. If the list has a source the remove command
+ * will be called on the source, and remove will be called
+ * on that list with the supplied element as argument. If no element is supplied
+ * all elements in the list will be removed. Use .clone() to not remove elements
+ * from the source.
+ *
+ * @param [elements] (Object) Element(s) to remove
+ * @return (Object) The same list it was called on
+ */
+
+List.prototype.remove = function(elements, _fromParent) {
+  var i, elementIndex;
+
+  elements = elements || this.clone();
+
+  if(!_fromParent && this.options.source) {
+    this.options.source.remove(elements);
+  }
+
+  if(elements === this) {
+    // Just remove everything
+    [].splice.call(this, 0);
+  }
+  else {
+    // Loop through the hard way
+    for(i = elements.length; i--;) {
+      elementIndex = this.indexOf(elements[i]);
+
+      if(this[elementIndex]) {
+        [].splice.call(this, elementIndex, 1);
+      }
+    }
+  }
+
+  return this;
+};
+
+
+/**
  * .filter()
  *
  * Returns a new List of elements matching the conditions
  *
- * @param paramName (type) Description
- * @return (type) Description
+ * @param conditions (Object|Function) The conditions to match or comparing method
+ * @return (List) The matched set
  */
 
 List.prototype.filter = function(conditions) {
-  var result = new this.constructor(),
+  var result = new List({ source: this.options.source }),
       matcher = typeof conditions === 'function' ? conditions : match(conditions),
       i, l;
 
@@ -325,6 +418,30 @@ List.prototype.filter = function(conditions) {
 
   return result;
 };
+
+
+/**
+ * .map()
+ *
+ * Regular Array.map() method whith the added ability to specify a property to
+ * auto map.
+ *
+ * @param property (String) Name
+ * @return (type) Description
+ */
+
+List.prototype.map = function(property) {
+  var result = new List(),
+      extractor = typeof property === 'function' ? property : extract(property),
+      i, l;
+
+  for(i = 0, l = this.length; i < l; i++) {
+    result.add(extractor(this[i]));
+  }
+
+  return result;
+};
+
 
 /* Private functions
 ============================================================================= */
@@ -354,31 +471,140 @@ function match (conditions) {
     return true;
   };
 }
-},{"./utils":4}],3:[function(require,module,exports){
-"use strict";
-
-var List = require('./List'),
-    Bucket = require('./Bucket'),
-    extend = require('./utils').extend,
-    Index;
 
 
-Index = exports = module.exports = function (index, options) {
-  this._index = index;
-  this._settings = extend({
-    unique: false,
-    sparse: false
-  }, typeof options === 'object' && options || {});
+/**
+ * extract()
+ *
+ * Return the property of an element
+ *
+ * @param paramName (type) Description
+ * @return (type) Description
+ */
+
+function extract (property) {
+  return function (element) {
+    return List.findByPath(element, property);
+  };
+}
+
+
+/* Aliases for imitating an array
+============================================================================= */
+
+List.prototype.push = function() {
+  return this.merge(arguments);
+};
+
+List.prototype.unshift = function() {
+  var i, element;
+
+  // Add each element to the beginning, backwards
+  for(i = arguments.length; i--;) {
+    element = arguments[i];
+    this.add(element, 0);
+  }
 
   return this;
 };
 
-Index.prototype = new List();
-Index.prototype.constructor = Index;
+List.prototype.concat = function() {
+  var result = new List(),
+      src = arguments,
+      i, l;
+
+  result.merge(this);
+
+  for(i = 0, l = src.length; i < l; i++) {
+    result.merge(src[i]);
+  }
+
+  return result;
+};
+
+List.prototype.pop = function() {
+  var result = this[this.length - 1];
+
+  this.remove([result]);
+  return result;
+};
+
+List.prototype.shift = function() {
+  var result = this[0];
+
+  this.remove([result]);
+  return result;
+};
+
+List.prototype.splice = function(index, howMany, replace) {
+  var result = new List(),
+      length = arguments.length,
+      i;
+
+  // Prepare replacements
+  replace = replace ? [replace] : [];
+
+  if(length > 3) {
+    replace = Array.prototype.slice.call(arguments, 2);
+  }
+
+  // Get elements
+  result.merge(Array.prototype.slice.call(this, index, index + howMany));
+
+  // Remove elements
+  this.remove(result);
+
+  // Add replacements one at a time, backwards
+  for(i = replace.length; i--;) {
+    this.add(replace[i], index);
+  }
+
+  return result;
+};
+
+},{}],3:[function(require,module,exports){
+"use strict";
+
+var List = require('./List'),
+    Bucket = require('./Bucket'),
+    Index;
+
+
+/**
+ * Index
+ *
+ * Class for storing objects in a hash where the property is a certain key of
+ * each object. 
+ *
+ * @param [options] (Object) Property to index
+ *  @param index (String) Property to index
+ *  @param unique (Boolean) If true, elements will be added only if the indexed
+ *    property has not been indexed already
+ *  @param sparse (Boolean) If true, undefined values will not be added (note
+ *    that other falsey values are not considered undefined)
+ * @return (Object) this
+ */
+
+Index = exports = module.exports = function Index (options) {
+  List.call(this, options, {
+    index: '',
+    unique: false,
+    sparse: false
+  });
+
+  this.elements = {};
+
+  return this;
+};
+
+
+/* Public methods
+============================================================================= */
 
 Index.prototype.add = function(element) {
   var i, l,
-      index = this._index,
+      elements = this.elements,
+      index = this.options.index,
       value,
       bucket;
 
@@ -391,14 +617,14 @@ Index.prototype.add = function(element) {
   }
 
   // If sparse and undefined
-  if(value === undefined && this._settings.sparse === true) {
+  if(value === undefined && this.options.sparse === true) {
     return false;
   }
 
-  bucket = this[value];
+  bucket = elements[value];
 
   if(!bucket) {
-    this[value] = bucket = new Bucket(this._settings.unique);
+    elements[value] = bucket = new Bucket({ unique: this.options.unique, source: this.options.source });
   }
 
   bucket.add(element);
@@ -406,33 +632,38 @@ Index.prototype.add = function(element) {
   return true;
 };
 
+
 Index.prototype.find = function(value) {
-  return this[value];
+  return this.elements[value] || new List({ unique: this.options.unique, source: this.options.source });
 };
 
-},{"./List":2,"./Bucket":5,"./utils":4}],4:[function(require,module,exports){
-"use strict";
+Index.prototype.remove = function(elements, _fromParent) {
+  var i, bucket, bucketIndex;
 
-/**
- * utils
- *
- * Just some handy helpers
- */
+  // Assuming an index always has a source
+  if(!_fromParent) {
+    this.options.source.remove(elements);
+    return this;
+  }
 
-exports.extend = function (target) {
-  var sources = [].slice.call(arguments),
-      source, prop;
+  // Assume elements is always specified, since it will never be called directly
+  for(i = elements.length; i--;) {
+    bucketIndex = elements[i][this.options.index];
+    bucket = this.elements[bucketIndex];
 
-  while(!!(source = sources.shift())) {
-    for(prop in source) {
-      target[prop] = source[prop];
+    if(bucket && bucket.length) {
+      bucket.remove(elements, true);
+
+      if(!bucket.length) {
+        delete this.elements[bucketIndex];
+      }
     }
   }
 
-  return target;
+  return this;
 };
 
-},{}],5:[function(require,module,exports){
+},{"./Bucket":4,"./List":2}],4:[function(require,module,exports){
 "use strict";
 
 var List = require('./List'),
@@ -445,16 +676,18 @@ var List = require('./List'),
  */
 
 
-Bucket = exports = module.exports = function (unique) {
-  this.unique = unique;
+Bucket = exports = module.exports = function Bucket (options) {
+  List.call(this, options, {
+    unique: false
+  });
 };
 
 Bucket.prototype = new List();
 Bucket.prototype.constructor = Bucket;
 
-Bucket.prototype.add = function(element) {
-  if(!this.length || !this.unique) {
-    this.push(element);
+Bucket.prototype.add = function(element, _where) {
+  if(!this.length || !this.options.unique) {
+    List.prototype.add.call(this, element, _where);
   }
 };
 
