@@ -108,7 +108,7 @@ Reol.prototype.find = function(conditions, one) {
 
   // Return eveything
   if(!key) {
-    return this.toArray();
+    return this;
   }
 
   // Find in index
@@ -191,7 +191,7 @@ Reol.prototype.remove = function(elements) {
 
 module.exports = Reol;
 
-},{"./List":2,"./Index":3,"./Bucket":4}],2:[function(require,module,exports){
+},{"./Bucket":4,"./Index":3,"./List":2}],2:[function(require,module,exports){
 "use strict";
 
 var List;

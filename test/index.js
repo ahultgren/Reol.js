@@ -49,6 +49,13 @@ describe('Basic tests', function () {
     test.should.be.instanceof(Reol.List);
   });
 
+  it('Find without query finds everything', function () {
+    var test = heap.find();
+
+    test.length.should.equal(1);
+    test.should.be.instanceof(Reol.List);
+  });
+
   it('Querying on non-index fields', function () {
     var test = heap.find({ unIndexedField: 'meow' });
 
