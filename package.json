@@ -1,6 +1,6 @@
 {
   "name": "reol",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Keep an array of objects indexed by field, for super-fast retrieval.",
   "main": "index.js",
   "scripts": {
