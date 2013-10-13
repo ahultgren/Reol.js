@@ -312,6 +312,36 @@ describe('Destructive array look-alike methods:', function () {
   });
 });
 
+describe('Index with true instead of {}', function () {
+  var heap;
+
+  it('should not throw an error when instantiated', function () {
+    heap = new Reol({
+      test: true
+    });
+  });
+
+  it('should still be pushable', function () {
+    heap.push({
+      test: 'meow'
+    }).push({
+      test: 'meow2'
+    });
+
+    heap.length.should.equal(2);
+  });
+
+  it('should still be searchable', function () {
+    heap.find({
+      test: 'meow'
+    }).length.should.equal(1);
+
+    heap.find({
+      test: 'meow2'
+    }).length.should.equal(1);
+  });
+});
+
 describe('findByPath tests', function () {
   var data = { 
         yep: "first level",
